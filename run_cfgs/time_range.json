@@ -3,23 +3,30 @@
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.stock_daily_quotes_non_ror"],
-      "drop_duplicate": true
+      "sources": ["cbond.cbond_terms"],
+      "start_time": "-30d",
+      "end_time": "schedule_now"
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
       "start_time": "-7d",
-      "end_time": "schedule_now",
-      "drop_duplicate": true
+      "end_time": "schedule_now"
     },
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.stock_daily_quotes_non_ror"],
-      "columns": ["ths_code", "date", "close_price"],
-      "drop_duplicate": true
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-3600",
+      "end_time": "schedule_now"
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "earliest",
+      "end_time": "schedule_now"
     }
   ],
   "output": [],

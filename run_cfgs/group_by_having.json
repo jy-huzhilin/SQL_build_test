@@ -1,0 +1,52 @@
+{
+  "input": [
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "columns": ["bond_type", "COUNT(*) AS cnt"],
+      "group_by": ["bond_type"],
+      "having": [{"column": "cnt", "op": ">", "value": 10}]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "columns": ["bond_type", "COUNT(*) AS cnt"],
+      "group_by": ["bond_type"],
+      "having": ["cnt > 10 AND cnt < 1000"]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "columns": ["bond_type", "COUNT(*) AS cnt", "AVG(list_price) AS avg_price"],
+      "group_by": ["bond_type"],
+      "having": [
+        [
+          {"column": "cnt", "op": ">", "value": 100},
+          {"column": "avg_price", "op": ">", "value": 110}
+        ]
+      ]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "columns": ["ths_code", "date", "SUM(volume) AS total_volume", "AVG(close_price) AS avg_close"],
+      "group_by": ["ths_code", "date"],
+      "having": [
+        {"column": "total_volume", "op": ">", "value": 1000},
+        {"column": "avg_close", "op": ">", "value": 50}
+      ]
+    }
+  ],
+  "output": [],
+  "computation": {
+    "external_source": "sql_test.py",
+    "class_name": "SqlTest",
+    "single": "compute",
+    "batch": ""
+  },
+  "schedule": ["****-**-** 15:30:00"]
+}

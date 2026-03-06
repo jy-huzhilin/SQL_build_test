@@ -4,12 +4,71 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
+      "filters": ["bond_type = '可转债' AND list_price > 100"]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "bond_type", "op": "=", "value": "'可转债'"}]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "list_price", "op": ">", "value": 100}]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "list_price", "op": ">=", "value": 100}]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "ths_code", "op": "LIKE", "value": "11%"}]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH", "110003.SH"]}]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "bond_type", "op": "NOT IN", "value": ["企业债", "公司债"]}]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "list_price", "op": "BETWEEN", "value": [95, 110]}]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [
+        [
+          {"column": "list_price", "op": ">", "value": 110},
+          {"column": "list_price", "op": "<", "value": 90}
+        ]
+      ]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
       "filters": [
         {"column": "bond_type", "op": "=", "value": "'可转债'"},
         {"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH"]},
         [
-          {"column": "list_price", "op": ">", "value": 100},
-          {"column": "list_price", "op": "<", "value": 50}
+          {"column": "list_price", "op": ">", "value": 110},
+          {"column": "list_price", "op": "<", "value": 90}
         ]
       ]
     }

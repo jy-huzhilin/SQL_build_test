@@ -11,6 +11,52 @@
           "on": "stock_daily_quotes_non_ror.ths_code = cbond_basic_info.ths_code"
         }
       ]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "join": [
+        {
+          "table": "cbond.cbond_basic_info",
+          "type": "INNER",
+          "on": "cbond_daily_quote_market.ths_code = cbond_basic_info.ths_code"
+        }
+      ]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "join": [
+        {
+          "table": "cbond.cbond_basic_info",
+          "type": "LEFT",
+          "on": "cbond_daily_quote_market.ths_code = cbond_basic_info.ths_code"
+        },
+        {
+          "table": "cbond.cbond_daily_terms",
+          "type": "LEFT",
+          "on": "cbond_daily_quote_market.ths_code = cbond_daily_terms.ths_code AND cbond_daily_quote_market.date = cbond_daily_terms.date"
+        }
+      ]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "join": [
+        {
+          "table": {
+            "name": "latest_price",
+            "table": "cbond.stock_daily_quotes_non_ror",
+            "columns": ["ths_code", "MAX(close_price) AS max_price"],
+            "group_by": ["ths_code"]
+          },
+          "type": "LEFT",
+          "on": "cbond_basic_info.ths_code = latest_price.ths_code"
+        }
+      ]
     }
   ],
   "output": [],

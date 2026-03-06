@@ -1,0 +1,53 @@
+{
+  "input": [
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "columns": ["ths_code", "bond_type", "list_price"]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "columns": ["bond_type"],
+      "distinct": true
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "qualify": "row_number() OVER (PARTITION BY ths_code, date ORDER BY create_time DESC) = 1"
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "order_by": [
+        {"column": "date", "direction": "DESC"},
+        {"column": "ths_code", "direction": "ASC"}
+      ]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "limit": 100
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "order_by": [{"column": "date", "direction": "DESC"}],
+      "limit": 50
+    }
+  ],
+  "output": [],
+  "computation": {
+    "external_source": "sql_test.py",
+    "class_name": "SqlTest",
+    "single": "compute",
+    "batch": ""
+  },
+  "schedule": ["****-**-** 15:30:00"]
+}

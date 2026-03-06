@@ -1,0 +1,56 @@
+{
+  "input": [
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.future_basic_info"]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.self_trading_dict"]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-3600",
+      "end_time": "schedule_now"
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_bulletin"],
+      "start_time": "-86400",
+      "end_time": "schedule_now"
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.macro_fundamentals"]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.report_kg"]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.dy1d_exposure_cne6_sw21"]
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info", "cbond.future_basic_info"]
+    }
+  ],
+  "output": [],
+  "computation": {
+    "external_source": "sql_test.py",
+    "class_name": "SqlTest",
+    "single": "compute",
+    "batch": ""
+  },
+  "schedule": ["****-**-** 15:30:00"]
+}
