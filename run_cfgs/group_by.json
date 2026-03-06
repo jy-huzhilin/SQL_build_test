@@ -1,0 +1,20 @@
+{
+  "input": [
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "columns": ["bond_type", "COUNT(*) AS cnt"],
+      "group_by": ["bond_type"],
+      "having": [{"column": "cnt", "op": ">", "value": 10}]
+    }
+  ],
+  "output": [],
+  "computation": {
+    "external_source": "sql_test.py",
+    "class_name": "SqlTest",
+    "single": "compute",
+    "batch": ""
+  },
+  "schedule": ["****-**-** 15:30:00"]
+}

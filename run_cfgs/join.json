@@ -1,0 +1,24 @@
+{
+  "input": [
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "join": [
+        {
+          "table": "cbond.cbond_basic_info",
+          "type": "LEFT",
+          "on": "stock_daily_quotes_non_ror.ths_code = cbond_basic_info.ths_code"
+        }
+      ]
+    }
+  ],
+  "output": [],
+  "computation": {
+    "external_source": "sql_test.py",
+    "class_name": "SqlTest",
+    "single": "compute",
+    "batch": ""
+  },
+  "schedule": ["****-**-** 15:30:00"]
+}
