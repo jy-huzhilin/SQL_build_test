@@ -9,7 +9,7 @@
           "table": {
             "name": "sub",
             "table": "cbond.stock_daily_quotes_non_ror",
-            "columns": ["ths_code", "MAX(close) AS max_price", "MAX(create_time) AS create_time"],
+            "columns": ["ths_code", "MAX(close) AS max_price"],
             "group_by": ["ths_code"],
             "start_time": "-604800",
             "end_time": "schedule_now"
@@ -27,7 +27,7 @@
           "table": {
             "name": "sub",
             "table": "cbond.stock_daily_quotes_non_ror",
-            "columns": ["ths_code", "AVG(close) AS avg_price", "COUNT(*) AS trade_cnt", "MAX(create_time) AS create_time"],
+            "columns": ["ths_code", "AVG(close) AS avg_price", "COUNT(*) AS trade_cnt"],
             "group_by": ["ths_code"],
             "start_time": "-604800",
             "end_time": "schedule_now"

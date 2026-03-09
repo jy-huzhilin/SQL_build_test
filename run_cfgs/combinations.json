@@ -58,7 +58,7 @@
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating", "issue_total_amt", "create_time"]}
+        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating", "issue_total_amt"]}
       ],
       "sources": ["bond_info"],
       "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]

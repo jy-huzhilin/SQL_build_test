@@ -4,7 +4,7 @@
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "cte_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating", "create_time"]}
+        {"name": "cte_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating"]}
       ],
       "sources": ["cte_info"]
     },
@@ -12,11 +12,11 @@
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating", "create_time"]},
+        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating"]},
         {
           "name": "latest_quote",
           "table": "cbond.stock_daily_quotes_non_ror",
-          "columns": ["ths_code", "close", "create_time"],
+          "columns": ["ths_code", "close"],
           "start_time": "-604800",
           "end_time": "schedule_now"
         }
@@ -28,7 +28,7 @@
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "cte_cbond", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating", "issue_total_amt", "create_time"]}
+        {"name": "cte_cbond", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating", "issue_total_amt"]}
       ],
       "sources": ["cte_cbond"],
       "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
