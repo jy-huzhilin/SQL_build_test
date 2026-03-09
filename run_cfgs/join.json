@@ -56,7 +56,7 @@
           "table": {
             "name": "latest_price",
             "table": "cbond.stock_daily_quotes_non_ror",
-            "columns": ["ths_code", "MAX(close) AS max_price"],
+            "columns": ["ths_code", "MAX(close) AS max_price", "MAX(create_time) AS create_time"],
             "group_by": ["ths_code"],
             "start_time": "-604800",
             "end_time": "schedule_now"
