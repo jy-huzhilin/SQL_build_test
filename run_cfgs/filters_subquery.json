@@ -29,6 +29,7 @@
           "value": {
             "table": "cbond.stock_daily_quotes_non_ror",
             "columns": ["ths_code"],
+            "group_by": ["ths_code"],
             "start_time": "-604800",
             "end_time": "schedule_now",
             "filters": [{"column": "close", "op": ">", "value": 200}]
