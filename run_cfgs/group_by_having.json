@@ -33,6 +33,8 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "columns": ["ths_code", "date", "SUM(volume) AS total_volume", "AVG(close_price) AS avg_close"],
       "group_by": ["ths_code", "date"],
       "having": [

@@ -17,12 +17,16 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "qualify": "row_number() OVER (PARTITION BY ths_code, date ORDER BY create_time DESC) = 1"
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "order_by": [
         {"column": "date", "direction": "DESC"},
         {"column": "ths_code", "direction": "ASC"}
@@ -32,12 +36,16 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "limit": 100
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "order_by": [{"column": "date", "direction": "DESC"}],
       "limit": 50
     }

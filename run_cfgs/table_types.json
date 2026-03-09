@@ -8,7 +8,9 @@
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.self_trading_dict"]
+      "sources": ["cbond.self_trading_dict"],
+      "start_time": "-604800",
+      "end_time": "schedule_now"
     },
     {
       "type": "data",
@@ -27,17 +29,23 @@
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.macro_fundamentals"]
+      "sources": ["cbond.macro_fundamentals"],
+      "start_time": "-2592000",
+      "end_time": "schedule_now"
     },
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.report_kg"]
+      "sources": ["cbond.report_kg"],
+      "start_time": "-2592000",
+      "end_time": "schedule_now"
     },
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.dy1d_exposure_cne6_sw21"]
+      "sources": ["cbond.dy1d_exposure_cne6_sw21"],
+      "start_time": "-2592000",
+      "end_time": "schedule_now"
     },
     {
       "type": "data",

@@ -4,7 +4,7 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
-      "start_time": "-30d",
+      "start_time": "-2592000",
       "end_time": "schedule_now",
       "filters": [
         {"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH"]},
@@ -15,7 +15,7 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
-      "start_time": "-30d",
+      "start_time": "-2592000",
       "end_time": "schedule_now",
       "columns": ["ths_code", "AVG(close_price) AS avg_close", "COUNT(*) AS trade_days"],
       "group_by": ["ths_code"],
@@ -25,6 +25,8 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "columns": ["stock_daily_quotes_non_ror.ths_code", "close_price", "bond_type"],
       "join": [
         {
@@ -39,6 +41,8 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "columns": ["cbond_basic_info.bond_type", "COUNT(*) AS cnt", "AVG(close_price) AS avg_price"],
       "join": [
         {
@@ -66,6 +70,8 @@
         {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "bond_type"]}
       ],
       "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "join": [
         {
           "table": "bond_info",
@@ -87,7 +93,7 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
-      "start_time": "-7d",
+      "start_time": "-604800",
       "end_time": "schedule_now",
       "columns": ["ths_code", "date", "close_price"],
       "drop_duplicate": true
@@ -96,7 +102,7 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
-      "start_time": "-30d",
+      "start_time": "-2592000",
       "end_time": "schedule_now",
       "columns": ["cbond_daily_quote_market.ths_code", "cbond_basic_info.bond_type", "AVG(close_price) AS avg_close", "COUNT(*) AS trade_days"],
       "join": [

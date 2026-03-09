@@ -13,7 +13,13 @@
       "db": "basic_data_db",
       "with": [
         {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "bond_type"]},
-        {"name": "latest_quote", "table": "cbond.stock_daily_quotes_non_ror", "columns": ["ths_code", "close_price"]}
+        {
+          "name": "latest_quote",
+          "table": "cbond.stock_daily_quotes_non_ror",
+          "columns": ["ths_code", "close_price"],
+          "start_time": "-604800",
+          "end_time": "schedule_now"
+        }
       ],
       "sources": ["bond_info"],
       "join": [{"table": "latest_quote", "type": "LEFT", "on": "bond_info.ths_code = latest_quote.ths_code"}]

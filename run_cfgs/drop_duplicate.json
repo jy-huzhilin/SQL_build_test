@@ -4,13 +4,7 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
-      "drop_duplicate": true
-    },
-    {
-      "type": "data",
-      "db": "basic_data_db",
-      "sources": ["cbond.stock_daily_quotes_non_ror"],
-      "start_time": "-7d",
+      "start_time": "-604800",
       "end_time": "schedule_now",
       "drop_duplicate": true
     },
@@ -18,6 +12,16 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-2592000",
+      "end_time": "schedule_now",
+      "drop_duplicate": true
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "columns": ["ths_code", "date", "close_price"],
       "drop_duplicate": true
     }

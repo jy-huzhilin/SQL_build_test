@@ -4,6 +4,8 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "filters": [
         {
           "column": "ths_code",
@@ -27,6 +29,8 @@
           "value": {
             "table": "cbond.stock_daily_quotes_non_ror",
             "columns": ["ths_code"],
+            "start_time": "-604800",
+            "end_time": "schedule_now",
             "filters": [{"column": "close_price", "op": ">", "value": 200}]
           }
         }
@@ -36,6 +40,8 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "filters": [
         {
           "op": "EXISTS",
@@ -51,6 +57,8 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "filters": [
         {
           "op": "NOT EXISTS",
