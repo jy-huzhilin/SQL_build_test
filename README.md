@@ -1106,6 +1106,92 @@ HAVING trade_days >= 5 AND avg_close > 100
 LIMIT 50
 ```
 
+**Item 10**：`drop_duplicate` + `filters`
+
+```json
+{
+  "sources": ["cbond.stock_daily_quotes_non_ror"],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "drop_duplicate": true,
+  "filters": [{"column": "close", "op": ">", "value": 100}]
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE (CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02')
+  AND close > 100
+QUALIFY row_number() OVER (PARTITION BY date, ths_code ORDER BY create_time DESC) = 1
+```
+
+**Item 11**：`drop_duplicate` + JOIN 静态表
+
+```json
+{
+  "sources": ["cbond.stock_daily_quotes_non_ror"],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "drop_duplicate": true,
+  "join": [{"table": "cbond.cbond_basic_info", "type": "LEFT", "on": "stock_daily_quotes_non_ror.ths_code = cbond_basic_info.ths_code"}]
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+LEFT JOIN cbond.cbond_basic_info
+  ON stock_daily_quotes_non_ror.ths_code = cbond_basic_info.ths_code
+WHERE CAST(stock_daily_quotes_non_ror.date AS DATE) > '2026-02-11'
+  AND CAST(stock_daily_quotes_non_ror.date AS DATE) <= '2026-03-02'
+QUALIFY row_number() OVER (PARTITION BY date, ths_code ORDER BY create_time DESC) = 1
+```
+
+**Item 12**：`drop_duplicate` + JOIN 时序表（两张表均有 `date` 字段）
+
+```json
+{
+  "sources": ["cbond.cbond_daily_quote_market"],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "drop_duplicate": true,
+  "join": [{"table": "cbond.cbond_daily_terms", "type": "LEFT", "on": "cbond_daily_quote_market.ths_code = cbond_daily_terms.ths_code AND cbond_daily_quote_market.date = cbond_daily_terms.date"}]
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_daily_quote_market
+LEFT JOIN cbond.cbond_daily_terms
+  ON cbond_daily_quote_market.ths_code = cbond_daily_terms.ths_code
+  AND cbond_daily_quote_market.date = cbond_daily_terms.date
+WHERE CAST(cbond_daily_quote_market.date AS DATE) > '2026-02-11'
+  AND CAST(cbond_daily_quote_market.date AS DATE) <= '2026-03-02'
+QUALIFY row_number() OVER (PARTITION BY date, ths_code ORDER BY create_time DESC) = 1
+```
+
+> QUALIFY 中的裸列名 `date`、`ths_code` 在 JOIN 场景下 ClickHouse 会优先解析为左表（主表）字段，无需手动加表前缀。
+
+**Item 13**：`drop_duplicate` + 指定列 + `order_by` + `limit`
+
+```json
+{
+  "sources": ["cbond.stock_daily_quotes_non_ror"],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "columns": ["ths_code", "date", "close"],
+  "drop_duplicate": true,
+  "order_by": [{"column": "close", "direction": "DESC"}],
+  "limit": 100
+}
+```
+
+```sql
+SELECT close, date, ths_code FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+QUALIFY row_number() OVER (PARTITION BY date, ths_code ORDER BY create_time DESC) = 1
+ORDER BY close DESC
+LIMIT 100
+```
+
 ---
 
 ## 常见注意事项
@@ -1115,3 +1201,7 @@ LIMIT 50
 3. **JOIN 场景下的显式列**：有 JOIN 时若需指定 `columns`，建议同时指定 `group_by`，避免系统自动补全的裸列名与 JOIN 表产生歧义。
 4. **GROUP BY 抑制主键补全**：指定 `group_by` 后，系统不会自动将时间/标的主键补入 SELECT，`columns` 即为最终 SELECT 列。
 5. **多列 IN**：`column` 字段支持列表格式，如 `"column": ["ths_code", "date"]`，生成 `(ths_code, date) IN (...)`。
+6. **`drop_duplicate` 不适用场景**：
+   - 与 `group_by` 同时使用：`drop_duplicate` 是行级去重，`group_by` 是聚合，两者语义矛盾，不应组合。
+   - 与 `sampling` 同时使用：两者都生成 `QUALIFY` 子句，会产生冲突，不支持同时指定。
+   - 与 `qualify` 同时使用：同上，`qualify` 是自定义 QUALIFY，与 `drop_duplicate` 生成的 QUALIFY 冲突。
