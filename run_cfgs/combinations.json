@@ -170,6 +170,24 @@
       "drop_duplicate": true,
       "order_by": [{"column": "close", "direction": "DESC"}],
       "limit": 100
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_hf_1min_ror"],
+      "start_time": "-3600",
+      "end_time": "schedule_now",
+      "drop_duplicate": true,
+      "sampling": {"interval": "5m"}
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "drop_duplicate": true,
+      "qualify": "row_number() OVER (PARTITION BY ths_code ORDER BY close DESC) <= 3"
     }
   ],
   "output": [],
