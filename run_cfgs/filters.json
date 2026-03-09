@@ -4,7 +4,7 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": ["issue_credit_rating = 'AAA' AND issue_total_amt > 10"]
+      "filters": ["issue_credit_rating = 'AAA' AND ths_code LIKE '11%'"]
     },
     {
       "type": "data",
@@ -15,14 +15,18 @@
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "issue_total_amt", "op": ">", "value": 10}]
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [{"column": "close", "op": ">", "value": 100}]
     },
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "issue_total_amt", "op": ">=", "value": 10}]
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [{"column": "close", "op": ">=", "value": 100}]
     },
     {
       "type": "data",
@@ -45,30 +49,36 @@
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "issue_total_amt", "op": "BETWEEN", "value": [5, 20]}]
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [{"column": "close", "op": "BETWEEN", "value": [50, 200]}]
     },
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.cbond_basic_info"],
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "filters": [
         [
-          {"column": "issue_total_amt", "op": ">", "value": 20},
-          {"column": "issue_total_amt", "op": "<", "value": 5}
+          {"column": "close", "op": ">", "value": 200},
+          {"column": "close", "op": "<", "value": 50}
         ]
       ]
     },
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.cbond_basic_info"],
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
       "filters": [
-        {"column": "issue_credit_rating", "op": "=", "value": "'AAA'"},
         {"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH"]},
+        {"column": "close", "op": ">", "value": 100},
         [
-          {"column": "issue_total_amt", "op": ">", "value": 20},
-          {"column": "issue_total_amt", "op": "<", "value": 5}
+          {"column": "volume", "op": ">", "value": 10000},
+          {"column": "pe", "op": "<", "value": 30}
         ]
       ]
     }

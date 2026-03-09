@@ -19,13 +19,15 @@
     {
       "type": "data",
       "db": "basic_data_db",
-      "sources": ["cbond.cbond_basic_info"],
-      "columns": ["issue_credit_rating", "COUNT(*) AS cnt", "AVG(issue_total_amt) AS avg_amt"],
-      "group_by": ["issue_credit_rating"],
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "columns": ["ths_code", "COUNT(*) AS cnt", "AVG(close) AS avg_close"],
+      "group_by": ["ths_code"],
       "having": [
         [
-          {"column": "cnt", "op": ">", "value": 100},
-          {"column": "avg_amt", "op": ">", "value": 10}
+          {"column": "cnt", "op": ">", "value": 3},
+          {"column": "avg_close", "op": ">", "value": 100}
         ]
       ]
     },
