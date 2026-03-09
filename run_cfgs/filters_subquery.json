@@ -45,11 +45,12 @@
       "end_time": "schedule_now",
       "filters": [
         {
-          "op": "EXISTS",
+          "column": "ths_code",
+          "op": "IN",
           "value": {
             "table": "cbond.cbond_basic_info",
-            "columns": ["1"],
-            "filters": ["cbond_basic_info.ths_code = cbond_daily_quote_market.ths_code AND issue_credit_rating = 'AAA'"]
+            "columns": ["ths_code"],
+            "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
           }
         }
       ]
@@ -62,11 +63,12 @@
       "end_time": "schedule_now",
       "filters": [
         {
-          "op": "NOT EXISTS",
+          "column": "ths_code",
+          "op": "NOT IN",
           "value": {
             "table": "cbond.cbond_basic_info",
-            "columns": ["1"],
-            "filters": ["cbond_basic_info.ths_code = cbond_daily_quote_market.ths_code AND issue_credit_rating = 'AA-'"]
+            "columns": ["ths_code"],
+            "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AA-'"}]
           }
         }
       ]
