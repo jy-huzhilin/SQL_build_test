@@ -1192,6 +1192,54 @@ ORDER BY close DESC
 LIMIT 100
 ```
 
+**Item 14**：`drop_duplicate` + `sampling`（内层去重、外层采样）
+
+```json
+{
+  "sources": ["cbond.stock_hf_1min_ror"],
+  "start_time": "-3600",
+  "end_time": "schedule_now",
+  "drop_duplicate": true,
+  "sampling": {"interval": "5m"}
+}
+```
+
+```sql
+SELECT * FROM (
+  SELECT * FROM cbond.stock_hf_1min_ror
+  WHERE time > '2026-03-02 14:30:00' AND time <= '2026-03-02 15:30:00'
+  QUALIFY row_number() OVER (PARTITION BY time, ths_code ORDER BY create_time DESC) = 1
+)
+QUALIFY row_number() OVER (
+  PARTITION BY toStartOfInterval(time, INTERVAL '5' MINUTE)
+  ORDER BY time ASC
+) = 1
+ORDER BY time ASC
+```
+
+> 系统自动将去重查询包装为子查询，外层再应用采样 QUALIFY，两者完全兼容。
+
+**Item 15**：`drop_duplicate` + `qualify`（两个 QUALIFY 条件 AND 合并）
+
+```json
+{
+  "sources": ["cbond.stock_daily_quotes_non_ror"],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "drop_duplicate": true,
+  "qualify": "row_number() OVER (PARTITION BY ths_code ORDER BY close DESC) <= 3"
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+QUALIFY row_number() OVER (PARTITION BY ths_code ORDER BY close DESC) <= 3
+    AND row_number() OVER (PARTITION BY date, ths_code ORDER BY create_time DESC) = 1
+```
+
+> `qualify` 与 `drop_duplicate` 的条件以 `AND` 合并为单个 QUALIFY 子句，两个条件同时生效。
+
 ---
 
 ## 常见注意事项
@@ -1201,7 +1249,7 @@ LIMIT 100
 3. **JOIN 场景下的显式列**：有 JOIN 时若需指定 `columns`，建议同时指定 `group_by`，避免系统自动补全的裸列名与 JOIN 表产生歧义。
 4. **GROUP BY 抑制主键补全**：指定 `group_by` 后，系统不会自动将时间/标的主键补入 SELECT，`columns` 即为最终 SELECT 列。
 5. **多列 IN**：`column` 字段支持列表格式，如 `"column": ["ths_code", "date"]`，生成 `(ths_code, date) IN (...)`。
-6. **`drop_duplicate` 不适用场景**：
-   - 与 `group_by` 同时使用：`drop_duplicate` 是行级去重，`group_by` 是聚合，两者语义矛盾，不应组合。
-   - 与 `sampling` 同时使用：两者都生成 `QUALIFY` 子句，会产生冲突，不支持同时指定。
-   - 与 `qualify` 同时使用：同上，`qualify` 是自定义 QUALIFY，与 `drop_duplicate` 生成的 QUALIFY 冲突。
+6. **`drop_duplicate` 与其他 QUALIFY 类功能的组合行为**：
+   - 与 `sampling` 同时使用：系统自动将去重查询包装为子查询，外层再应用采样 QUALIFY，两者完全兼容。
+   - 与 `qualify` 同时使用：sqlglot 将两个 QUALIFY 条件以 `AND` 合并为单个 QUALIFY 子句，两个条件同时生效。
+   - 与 `group_by` 同时使用：语义矛盾（聚合 vs 行级去重），不应组合。
