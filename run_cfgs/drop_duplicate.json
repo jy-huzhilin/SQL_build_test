@@ -22,7 +22,7 @@
       "sources": ["cbond.stock_daily_quotes_non_ror"],
       "start_time": "-604800",
       "end_time": "schedule_now",
-      "columns": ["ths_code", "date", "close_price"],
+      "columns": ["ths_code", "date", "close"],
       "drop_duplicate": true
     }
   ],
