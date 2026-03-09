@@ -8,7 +8,7 @@
       "end_time": "schedule_now",
       "filters": [
         {"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH"]},
-        {"column": "close_price", "op": ">", "value": 100}
+        {"column": "close", "op": ">", "value": 100}
       ]
     },
     {
@@ -17,7 +17,7 @@
       "sources": ["cbond.cbond_daily_quote_market"],
       "start_time": "-2592000",
       "end_time": "schedule_now",
-      "columns": ["ths_code", "AVG(close_price) AS avg_close", "COUNT(*) AS trade_days"],
+      "columns": ["ths_code", "AVG(close) AS avg_close", "COUNT(*) AS trade_days"],
       "group_by": ["ths_code"],
       "having": [{"column": "trade_days", "op": ">=", "value": 5}]
     },
@@ -27,7 +27,7 @@
       "sources": ["cbond.stock_daily_quotes_non_ror"],
       "start_time": "-604800",
       "end_time": "schedule_now",
-      "columns": ["stock_daily_quotes_non_ror.ths_code", "close_price", "bond_type"],
+      "columns": ["stock_daily_quotes_non_ror.ths_code", "close", "issue_credit_rating"],
       "join": [
         {
           "table": "cbond.cbond_basic_info",
@@ -35,7 +35,7 @@
           "on": "stock_daily_quotes_non_ror.ths_code = cbond_basic_info.ths_code"
         }
       ],
-      "filters": [{"column": "bond_type", "op": "=", "value": "'可转债'"}]
+      "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
     },
     {
       "type": "data",
@@ -43,7 +43,7 @@
       "sources": ["cbond.stock_daily_quotes_non_ror"],
       "start_time": "-604800",
       "end_time": "schedule_now",
-      "columns": ["cbond_basic_info.bond_type", "COUNT(*) AS cnt", "AVG(close_price) AS avg_price"],
+      "columns": ["cbond_basic_info.issue_credit_rating", "COUNT(*) AS cnt", "AVG(close) AS avg_price"],
       "join": [
         {
           "table": "cbond.cbond_basic_info",
@@ -51,23 +51,23 @@
           "on": "stock_daily_quotes_non_ror.ths_code = cbond_basic_info.ths_code"
         }
       ],
-      "group_by": ["cbond_basic_info.bond_type"],
+      "group_by": ["cbond_basic_info.issue_credit_rating"],
       "having": [{"column": "cnt", "op": ">", "value": 100}]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "bond_type", "list_price"]}
+        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating", "issue_total_amt"]}
       ],
       "sources": ["bond_info"],
-      "filters": [{"column": "bond_type", "op": "=", "value": "'可转债'"}]
+      "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "bond_type"]}
+        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating"]}
       ],
       "sources": ["cbond.stock_daily_quotes_non_ror"],
       "start_time": "-604800",
@@ -95,7 +95,7 @@
       "sources": ["cbond.stock_daily_quotes_non_ror"],
       "start_time": "-604800",
       "end_time": "schedule_now",
-      "columns": ["ths_code", "date", "close_price"],
+      "columns": ["ths_code", "date", "close"],
       "drop_duplicate": true
     },
     {
@@ -104,7 +104,7 @@
       "sources": ["cbond.cbond_daily_quote_market"],
       "start_time": "-2592000",
       "end_time": "schedule_now",
-      "columns": ["cbond_daily_quote_market.ths_code", "cbond_basic_info.bond_type", "AVG(close_price) AS avg_close", "COUNT(*) AS trade_days"],
+      "columns": ["cbond_daily_quote_market.ths_code", "cbond_basic_info.issue_credit_rating", "AVG(close) AS avg_close", "COUNT(*) AS trade_days"],
       "join": [
         {
           "table": "cbond.cbond_basic_info",
@@ -112,8 +112,8 @@
           "on": "cbond_daily_quote_market.ths_code = cbond_basic_info.ths_code"
         }
       ],
-      "filters": [{"column": "cbond_basic_info.bond_type", "op": "=", "value": "'可转债'"}],
-      "group_by": ["cbond_daily_quote_market.ths_code", "cbond_basic_info.bond_type"],
+      "filters": [{"column": "cbond_basic_info.issue_credit_rating", "op": "=", "value": "'AAA'"}],
+      "group_by": ["cbond_daily_quote_market.ths_code", "cbond_basic_info.issue_credit_rating"],
       "having": [
         {"column": "trade_days", "op": ">=", "value": 5},
         {"column": "avg_close", "op": ">", "value": 100}

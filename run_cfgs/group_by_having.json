@@ -4,28 +4,28 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "columns": ["bond_type", "COUNT(*) AS cnt"],
-      "group_by": ["bond_type"],
+      "columns": ["issue_credit_rating", "COUNT(*) AS cnt"],
+      "group_by": ["issue_credit_rating"],
       "having": [{"column": "cnt", "op": ">", "value": 10}]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "columns": ["bond_type", "COUNT(*) AS cnt"],
-      "group_by": ["bond_type"],
+      "columns": ["issue_credit_rating", "COUNT(*) AS cnt"],
+      "group_by": ["issue_credit_rating"],
       "having": ["cnt > 10 AND cnt < 1000"]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "columns": ["bond_type", "COUNT(*) AS cnt", "AVG(list_price) AS avg_price"],
-      "group_by": ["bond_type"],
+      "columns": ["issue_credit_rating", "COUNT(*) AS cnt", "AVG(issue_total_amt) AS avg_amt"],
+      "group_by": ["issue_credit_rating"],
       "having": [
         [
           {"column": "cnt", "op": ">", "value": 100},
-          {"column": "avg_price", "op": ">", "value": 110}
+          {"column": "avg_amt", "op": ">", "value": 10}
         ]
       ]
     },
@@ -35,7 +35,7 @@
       "sources": ["cbond.stock_daily_quotes_non_ror"],
       "start_time": "-604800",
       "end_time": "schedule_now",
-      "columns": ["ths_code", "date", "SUM(volume) AS total_volume", "AVG(close_price) AS avg_close"],
+      "columns": ["ths_code", "date", "SUM(volume) AS total_volume", "AVG(close) AS avg_close"],
       "group_by": ["ths_code", "date"],
       "having": [
         {"column": "total_volume", "op": ">", "value": 1000},

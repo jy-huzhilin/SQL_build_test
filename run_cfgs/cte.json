@@ -4,7 +4,7 @@
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "cte_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "bond_type"]}
+        {"name": "cte_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating"]}
       ],
       "sources": ["cte_info"]
     },
@@ -12,11 +12,11 @@
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "bond_type"]},
+        {"name": "bond_info", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating"]},
         {
           "name": "latest_quote",
           "table": "cbond.stock_daily_quotes_non_ror",
-          "columns": ["ths_code", "close_price"],
+          "columns": ["ths_code", "close"],
           "start_time": "-604800",
           "end_time": "schedule_now"
         }
@@ -28,10 +28,10 @@
       "type": "data",
       "db": "basic_data_db",
       "with": [
-        {"name": "cte_cbond", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "bond_type", "list_price"]}
+        {"name": "cte_cbond", "table": "cbond.cbond_basic_info", "columns": ["ths_code", "issue_credit_rating", "issue_total_amt"]}
       ],
       "sources": ["cte_cbond"],
-      "filters": [{"column": "bond_type", "op": "=", "value": "'可转债'"}]
+      "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
     }
   ],
   "output": [],

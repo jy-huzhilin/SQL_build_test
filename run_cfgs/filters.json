@@ -4,25 +4,25 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": ["bond_type = '可转债' AND list_price > 100"]
+      "filters": ["issue_credit_rating = 'AAA' AND issue_total_amt > 10"]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "bond_type", "op": "=", "value": "'可转债'"}]
+      "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "list_price", "op": ">", "value": 100}]
+      "filters": [{"column": "issue_total_amt", "op": ">", "value": 10}]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "list_price", "op": ">=", "value": 100}]
+      "filters": [{"column": "issue_total_amt", "op": ">=", "value": 10}]
     },
     {
       "type": "data",
@@ -40,13 +40,13 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "bond_type", "op": "NOT IN", "value": ["企业债", "公司债"]}]
+      "filters": [{"column": "issue_credit_rating", "op": "NOT IN", "value": ["AA-", "A+"]}]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "list_price", "op": "BETWEEN", "value": [95, 110]}]
+      "filters": [{"column": "issue_total_amt", "op": "BETWEEN", "value": [5, 20]}]
     },
     {
       "type": "data",
@@ -54,8 +54,8 @@
       "sources": ["cbond.cbond_basic_info"],
       "filters": [
         [
-          {"column": "list_price", "op": ">", "value": 110},
-          {"column": "list_price", "op": "<", "value": 90}
+          {"column": "issue_total_amt", "op": ">", "value": 20},
+          {"column": "issue_total_amt", "op": "<", "value": 5}
         ]
       ]
     },
@@ -64,11 +64,11 @@
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
       "filters": [
-        {"column": "bond_type", "op": "=", "value": "'可转债'"},
+        {"column": "issue_credit_rating", "op": "=", "value": "'AAA'"},
         {"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH"]},
         [
-          {"column": "list_price", "op": ">", "value": 110},
-          {"column": "list_price", "op": "<", "value": 90}
+          {"column": "issue_total_amt", "op": ">", "value": 20},
+          {"column": "issue_total_amt", "op": "<", "value": 5}
         ]
       ]
     }

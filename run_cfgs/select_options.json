@@ -4,13 +4,13 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "columns": ["ths_code", "bond_type", "list_price"]
+      "columns": ["ths_code", "issue_credit_rating", "issue_total_amt"]
     },
     {
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "columns": ["bond_type"],
+      "columns": ["issue_credit_rating"],
       "distinct": true
     },
     {

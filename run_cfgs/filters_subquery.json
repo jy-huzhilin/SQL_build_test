@@ -13,7 +13,7 @@
           "value": {
             "table": "cbond.cbond_basic_info",
             "columns": ["ths_code"],
-            "filters": [{"column": "bond_type", "op": "=", "value": "'可转债'"}]
+            "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
           }
         }
       ]
@@ -31,7 +31,7 @@
             "columns": ["ths_code"],
             "start_time": "-604800",
             "end_time": "schedule_now",
-            "filters": [{"column": "close_price", "op": ">", "value": 200}]
+            "filters": [{"column": "close", "op": ">", "value": 200}]
           }
         }
       ]
@@ -48,7 +48,7 @@
           "value": {
             "table": "cbond.cbond_basic_info",
             "columns": ["1"],
-            "filters": ["cbond_basic_info.ths_code = cbond_daily_quote_market.ths_code AND bond_type = '可转债'"]
+            "filters": ["cbond_basic_info.ths_code = cbond_daily_quote_market.ths_code AND issue_credit_rating = 'AAA'"]
           }
         }
       ]
@@ -65,7 +65,7 @@
           "value": {
             "table": "cbond.cbond_basic_info",
             "columns": ["1"],
-            "filters": ["cbond_basic_info.ths_code = cbond_daily_quote_market.ths_code AND bond_type = '退市债'"]
+            "filters": ["cbond_basic_info.ths_code = cbond_daily_quote_market.ths_code AND issue_credit_rating = 'AA-'"]
           }
         }
       ]
