@@ -707,6 +707,200 @@ LEFT JOIN (
 ) AS latest_price ON cbond_basic_info.ths_code = latest_price.ths_code
 ```
 
+**Item 5**：JOIN 表别名（`name` 字段）+ 结构化 ON 列表
+
+```json
+{
+  "sources": [{"table": "cbond.stock_daily_quotes_non_ror", "name": "q"}],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "join": [
+    {
+      "table": "cbond.cbond_basic_info",
+      "name": "info",
+      "type": "LEFT",
+      "on": [
+        {"left": "q.ths_code", "op": "=", "right": "info.ths_code"}
+      ]
+    }
+  ],
+  "columns": ["q.ths_code", "q.date", "q.close", "info.issue_credit_rating"]
+}
+```
+
+```sql
+SELECT info.issue_credit_rating, q.close, q.date, q.ths_code
+FROM cbond.stock_daily_quotes_non_ror AS q
+LEFT JOIN cbond.cbond_basic_info AS info ON q.ths_code = info.ths_code
+WHERE CAST(q.date AS DATE) > '2026-02-11' AND CAST(q.date AS DATE) <= '2026-03-02'
+```
+
+> 为主表或 JOIN 表指定 `name` 字段后，SQL 中使用 `AS alias` 形式，时间过滤也会自动加上别名前缀（如 `q.date`）。
+
+**Item 6**：结构化 ON 多条件 AND（两个等值条件）
+
+```json
+{
+  "sources": [{"table": "cbond.cbond_daily_quote_market", "name": "mkt"}],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "join": [
+    {
+      "table": "cbond.cbond_daily_terms",
+      "name": "terms",
+      "type": "LEFT",
+      "on": [
+        {"left": "mkt.ths_code", "op": "=", "right": "terms.ths_code"},
+        {"left": "mkt.date",     "op": "=", "right": "terms.date"}
+      ]
+    }
+  ]
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_daily_quote_market AS mkt
+LEFT JOIN cbond.cbond_daily_terms AS terms
+  ON mkt.ths_code = terms.ths_code AND mkt.date = terms.date
+WHERE CAST(mkt.date AS DATE) > '2026-02-11' AND CAST(mkt.date AS DATE) <= '2026-03-02'
+```
+
+**Item 7**：结构化 ON 中 `left` 使用表达式 dict（`toDate(hf.time) = daily.date`）
+
+```json
+{
+  "sources": [{"table": "cbond.cbond_hf_1min_market", "name": "hf"}],
+  "start_time": "-3600",
+  "end_time": "schedule_now",
+  "join": [
+    {
+      "table": "cbond.cbond_daily_quote_market",
+      "name": "daily",
+      "type": "LEFT",
+      "on": [
+        {"left": "hf.ths_code", "op": "=", "right": "daily.ths_code"},
+        {"left": {"func": "toDate", "column": "hf.time"}, "op": "=", "right": "daily.date"}
+      ]
+    }
+  ],
+  "columns": ["hf.ths_code", "hf.time", "hf.close", "daily.close"]
+}
+```
+
+```sql
+SELECT daily.close, hf.close, hf.ths_code, hf.time
+FROM cbond.cbond_hf_1min_market AS hf
+LEFT JOIN cbond.cbond_daily_quote_market AS daily
+  ON hf.ths_code = daily.ths_code AND toDate(hf.time) = daily.date
+WHERE hf.time > '2026-03-02 14:30:00' AND hf.time <= '2026-03-02 15:30:00'
+```
+
+> ON 条件中的 `left` 字段同样支持表达式 dict，可对 JOIN 字段进行函数转换后再比较。
+
+**Item 8**：ASOF LEFT JOIN（时间非精确对齐，`>=` 操作符）
+
+```json
+{
+  "sources": [{"table": "cbond.cbond_hf_1min_market", "name": "hf"}],
+  "start_time": "-3600",
+  "end_time": "schedule_now",
+  "join": [
+    {
+      "table": "cbond.cbond_daily_quote_net",
+      "name": "daily",
+      "type": "ASOF LEFT",
+      "on": [
+        {"left": "hf.ths_code", "op": "=",  "right": "daily.ths_code"},
+        {"left": "hf.time",     "op": ">=", "right": "daily.date"}
+      ]
+    }
+  ],
+  "columns": ["hf.ths_code", "hf.time", "hf.close", "daily.close"]
+}
+```
+
+```sql
+SELECT daily.close, hf.close, hf.ths_code, hf.time
+FROM cbond.cbond_hf_1min_market AS hf
+ASOF LEFT JOIN cbond.cbond_daily_quote_net AS daily
+  ON hf.ths_code = daily.ths_code AND hf.time >= daily.date
+WHERE hf.time > '2026-03-02 14:30:00' AND hf.time <= '2026-03-02 15:30:00'
+```
+
+> ASOF JOIN 是 ClickHouse 专有语法，用于将高频时序数据与低频数据按最近时间点关联。ON 条件须包含一个不等式条件（如 `>=`）。
+
+**Item 9**：JOIN 子查询 + 结构化 ON
+
+```json
+{
+  "sources": [{"table": "cbond.stock_daily_quotes_non_ror", "name": "q"}],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "join": [
+    {
+      "table": {
+        "name": "aaa_info",
+        "table": "cbond.cbond_basic_info",
+        "columns": ["ths_code", "issue_credit_rating"],
+        "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
+      },
+      "type": "LEFT",
+      "on": [
+        {"left": "q.ths_code", "op": "=", "right": "aaa_info.ths_code"}
+      ]
+    }
+  ],
+  "columns": ["q.ths_code", "q.date", "q.close", "aaa_info.issue_credit_rating"]
+}
+```
+
+```sql
+SELECT aaa_info.issue_credit_rating, q.close, q.date, q.ths_code
+FROM cbond.stock_daily_quotes_non_ror AS q
+LEFT JOIN (
+  SELECT issue_credit_rating, ths_code FROM cbond.cbond_basic_info AS aaa_info
+  WHERE issue_credit_rating = 'AAA'
+) AS aaa_info ON q.ths_code = aaa_info.ths_code
+WHERE CAST(q.date AS DATE) > '2026-02-11' AND CAST(q.date AS DATE) <= '2026-03-02'
+```
+
+**Item 10**：三表 JOIN（主表别名 + 两个 LEFT JOIN + 结构化 ON）
+
+```json
+{
+  "sources": [{"table": "cbond.cbond_daily_quote_market", "name": "mkt"}],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "join": [
+    {
+      "table": "cbond.cbond_basic_info",
+      "name": "info",
+      "type": "LEFT",
+      "on": [{"left": "mkt.ths_code", "op": "=", "right": "info.ths_code"}]
+    },
+    {
+      "table": "cbond.cbond_daily_terms",
+      "name": "terms",
+      "type": "LEFT",
+      "on": [
+        {"left": "mkt.ths_code", "op": "=", "right": "terms.ths_code"},
+        {"left": "mkt.date",     "op": "=", "right": "terms.date"}
+      ]
+    }
+  ],
+  "columns": ["mkt.ths_code", "mkt.date", "mkt.close", "info.issue_credit_rating", "terms.conversion_clause_price"]
+}
+```
+
+```sql
+SELECT info.issue_credit_rating, mkt.close, mkt.date, mkt.ths_code, terms.conversion_clause_price
+FROM cbond.cbond_daily_quote_market AS mkt
+LEFT JOIN cbond.cbond_basic_info AS info ON mkt.ths_code = info.ths_code
+LEFT JOIN cbond.cbond_daily_terms AS terms
+  ON mkt.ths_code = terms.ths_code AND mkt.date = terms.date
+WHERE CAST(mkt.date AS DATE) > '2026-02-11' AND CAST(mkt.date AS DATE) <= '2026-03-02'
+```
+
 ---
 
 ## cte.json — 公共表表达式（WITH）
