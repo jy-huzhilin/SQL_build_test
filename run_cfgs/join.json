@@ -1,6 +1,7 @@
 {
   "input": [
     {
+      "_comment": "LEFT JOIN（字符串 ON）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -15,6 +16,7 @@
       ]
     },
     {
+      "_comment": "INNER JOIN（字符串 ON）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
@@ -29,6 +31,7 @@
       ]
     },
     {
+      "_comment": "多表 LEFT JOIN（字符串 ON）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
@@ -48,6 +51,7 @@
       ]
     },
     {
+      "_comment": "JOIN 子查询（table 为 dict，name 在 table dict 内）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
@@ -64,6 +68,137 @@
           "type": "LEFT",
           "on": "cbond_basic_info.ths_code = latest_price.ths_code"
         }
+      ]
+    },
+    {
+      "_comment": "JOIN 表别名（name 在 join 级别）+ 结构化 ON 列表",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": [{"table": "cbond.stock_daily_quotes_non_ror", "name": "q"}],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "join": [
+        {
+          "table": "cbond.cbond_basic_info",
+          "name": "info",
+          "type": "LEFT",
+          "on": [
+            {"left": "q.ths_code", "op": "=", "right": "info.ths_code"}
+          ]
+        }
+      ],
+      "columns": ["q.ths_code", "q.date", "q.close", "info.issue_credit_rating"]
+    },
+    {
+      "_comment": "结构化 ON：多条件 AND，left/right 为字符串",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": [{"table": "cbond.cbond_daily_quote_market", "name": "mkt"}],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "join": [
+        {
+          "table": "cbond.cbond_daily_terms",
+          "name": "terms",
+          "type": "LEFT",
+          "on": [
+            {"left": "mkt.ths_code", "op": "=", "right": "terms.ths_code"},
+            {"left": "mkt.date",     "op": "=", "right": "terms.date"}
+          ]
+        }
+      ]
+    },
+    {
+      "_comment": "结构化 ON：left 使用表达式 dict（toDate(time)）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": [{"table": "cbond.cbond_hf_1min_market", "name": "hf"}],
+      "start_time": "-3600",
+      "end_time": "schedule_now",
+      "join": [
+        {
+          "table": "cbond.cbond_daily_quote_market",
+          "name": "daily",
+          "type": "LEFT",
+          "on": [
+            {"left": "hf.ths_code", "op": "=", "right": "daily.ths_code"},
+            {"left": {"func": "toDate", "column": "hf.time"}, "op": "=", "right": "daily.date"}
+          ]
+        }
+      ],
+      "columns": ["hf.ths_code", "hf.time", "hf.close", "daily.close"]
+    },
+    {
+      "_comment": "ASOF LEFT JOIN：分钟行情关联日线行情（时间非精确对齐）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": [{"table": "cbond.cbond_hf_1min_market", "name": "hf"}],
+      "start_time": "-3600",
+      "end_time": "schedule_now",
+      "join": [
+        {
+          "table": "cbond.cbond_daily_quote_net",
+          "name": "daily",
+          "type": "ASOF LEFT",
+          "on": [
+            {"left": "hf.ths_code", "op": "=",  "right": "daily.ths_code"},
+            {"left": "hf.time",     "op": ">=", "right": "daily.date"}
+          ]
+        }
+      ],
+      "columns": ["hf.ths_code", "hf.time", "hf.close", "daily.close"]
+    },
+    {
+      "_comment": "JOIN 子查询 + 结构化 ON",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": [{"table": "cbond.stock_daily_quotes_non_ror", "name": "q"}],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "join": [
+        {
+          "table": {
+            "name": "aaa_info",
+            "table": "cbond.cbond_basic_info",
+            "columns": ["ths_code", "issue_credit_rating"],
+            "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
+          },
+          "type": "LEFT",
+          "on": [
+            {"left": "q.ths_code", "op": "=", "right": "aaa_info.ths_code"}
+          ]
+        }
+      ],
+      "columns": ["q.ths_code", "q.date", "q.close", "aaa_info.issue_credit_rating"]
+    },
+    {
+      "_comment": "三表 JOIN：主表别名 + 两个 LEFT JOIN + 结构化 ON",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": [{"table": "cbond.cbond_daily_quote_market", "name": "mkt"}],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "join": [
+        {
+          "table": "cbond.cbond_basic_info",
+          "name": "info",
+          "type": "LEFT",
+          "on": [{"left": "mkt.ths_code", "op": "=", "right": "info.ths_code"}]
+        },
+        {
+          "table": "cbond.cbond_daily_terms",
+          "name": "terms",
+          "type": "LEFT",
+          "on": [
+            {"left": "mkt.ths_code", "op": "=", "right": "terms.ths_code"},
+            {"left": "mkt.date",     "op": "=", "right": "terms.date"}
+          ]
+        }
+      ],
+      "columns": [
+        "mkt.ths_code", "mkt.date", "mkt.close",
+        "info.issue_credit_rating",
+        "terms.conversion_clause_price"
       ]
     }
   ],

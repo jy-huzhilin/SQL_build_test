@@ -1,6 +1,7 @@
 {
   "input": [
     {
+      "_comment": "基础 CTE：table 为字符串表名",
       "type": "data",
       "db": "basic_data_db",
       "with": [
@@ -9,6 +10,7 @@
       "sources": ["cte_info"]
     },
     {
+      "_comment": "多 CTE + CTE JOIN",
       "type": "data",
       "db": "basic_data_db",
       "with": [
@@ -25,6 +27,7 @@
       "join": [{"table": "latest_quote", "type": "LEFT", "on": "bond_info.ths_code = latest_quote.ths_code"}]
     },
     {
+      "_comment": "CTE + 过滤条件",
       "type": "data",
       "db": "basic_data_db",
       "with": [
@@ -32,6 +35,74 @@
       ],
       "sources": ["cte_cbond"],
       "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
+    },
+    {
+      "_comment": "CTE 的 table 为子查询 dict（name 必填）",
+      "type": "data",
+      "db": "basic_data_db",
+      "with": [
+        {
+          "name": "aaa_bonds",
+          "table": {
+            "table": "cbond.cbond_basic_info",
+            "columns": ["ths_code", "listed_date"],
+            "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
+          }
+        }
+      ],
+      "sources": ["aaa_bonds"],
+      "columns": ["ths_code", "listed_date"]
+    },
+    {
+      "_comment": "CTE 子查询（含 GROUP BY）：聚合后作为 CTE",
+      "type": "data",
+      "db": "basic_data_db",
+      "with": [
+        {
+          "name": "avg_close_cte",
+          "table": {
+            "table": "cbond.stock_daily_quotes_non_ror",
+            "columns": ["ths_code", "AVG(close) AS avg_close", "COUNT(*) AS trade_days"],
+            "group_by": ["ths_code"],
+            "start_time": "-604800",
+            "end_time": "schedule_now"
+          }
+        }
+      ],
+      "sources": ["avg_close_cte"],
+      "filters": [{"column": "trade_days", "op": ">=", "value": 3}]
+    },
+    {
+      "_comment": "两个 CTE 子查询互相联结",
+      "type": "data",
+      "db": "basic_data_db",
+      "with": [
+        {
+          "name": "cbond_aaa",
+          "table": {
+            "table": "cbond.cbond_basic_info",
+            "columns": ["ths_code"],
+            "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
+          }
+        },
+        {
+          "name": "recent_quote",
+          "table": {
+            "table": "cbond.cbond_daily_quote_market",
+            "columns": ["ths_code", "date", "close"],
+            "start_time": "-604800",
+            "end_time": "schedule_now"
+          }
+        }
+      ],
+      "sources": ["cbond_aaa"],
+      "join": [
+        {
+          "table": "recent_quote",
+          "type": "INNER",
+          "on": "cbond_aaa.ths_code = recent_quote.ths_code"
+        }
+      ]
     }
   ],
   "output": [],

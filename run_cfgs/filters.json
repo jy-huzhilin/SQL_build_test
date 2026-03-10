@@ -1,18 +1,21 @@
 {
   "input": [
     {
+      "_comment": "字符串兜底条件",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
       "filters": ["issue_credit_rating = 'AAA' AND ths_code LIKE '11%'"]
     },
     {
+      "_comment": "结构化字典：= 运算符",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
       "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
     },
     {
+      "_comment": "结构化字典：> 运算符",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -21,6 +24,7 @@
       "filters": [{"column": "close", "op": ">", "value": 100}]
     },
     {
+      "_comment": "结构化字典：>= 运算符",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -29,24 +33,46 @@
       "filters": [{"column": "close", "op": ">=", "value": 100}]
     },
     {
+      "_comment": "结构化字典：< 运算符",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [{"column": "close", "op": "<", "value": 150}]
+    },
+    {
+      "_comment": "结构化字典：<= 运算符",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [{"column": "close", "op": "<=", "value": 150}]
+    },
+    {
+      "_comment": "结构化字典：LIKE 运算符",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
       "filters": [{"column": "ths_code", "op": "LIKE", "value": "11%"}]
     },
     {
+      "_comment": "结构化字典：IN（列表）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
       "filters": [{"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH", "110003.SH"]}]
     },
     {
+      "_comment": "结构化字典：NOT IN（列表）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
       "filters": [{"column": "issue_credit_rating", "op": "NOT IN", "value": ["AA-", "A+"]}]
     },
     {
+      "_comment": "结构化字典：BETWEEN",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -55,6 +81,7 @@
       "filters": [{"column": "close", "op": "BETWEEN", "value": [50, 200]}]
     },
     {
+      "_comment": "列表格式（OR 连接）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -68,6 +95,7 @@
       ]
     },
     {
+      "_comment": "AND + IN + OR 列表混合",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -78,8 +106,44 @@
         {"column": "close", "op": ">", "value": 100},
         [
           {"column": "volume", "op": ">", "value": 10000},
-          {"column": "pe", "op": "<", "value": 30}
+          {"column": "pe",     "op": "<", "value": 30}
         ]
+      ]
+    },
+    {
+      "_comment": "column 为表达式 dict：toDate(time) = date",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-7200",
+      "end_time": "schedule_now",
+      "filters": [
+        {"column": {"func": "toDate", "column": "time"}, "op": "=", "value": "toDate(now())"},
+        {"column": "close", "op": ">", "value": 0}
+      ]
+    },
+    {
+      "_comment": "多列元组 IN：(ths_code, date) IN (...)",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [
+        {"column": ["ths_code", "date"], "op": "IN", "value": [["110001.SH", "2026-03-03"], ["110002.SH", "2026-03-03"]]}
+      ]
+    },
+    {
+      "_comment": "多条件 AND：函数列 + 普通列",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [
+        {"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH"]},
+        {"column": "close", "op": ">", "value": 0},
+        {"column": "volume", "op": ">", "value": 0}
       ]
     }
   ],

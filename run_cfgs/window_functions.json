@@ -1,0 +1,244 @@
+{
+  "input": [
+    {
+      "_comment": "avg 窗口函数：PARTITION BY + ORDER BY + ROWS frame（5日均线）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-2592000",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        "close",
+        {
+          "func": "avg",
+          "column": "close",
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "date", "direction": "ASC"}],
+            "frame": "ROWS BETWEEN 4 PRECEDING AND CURRENT ROW"
+          },
+          "name": "ma_5"
+        }
+      ]
+    },
+    {
+      "_comment": "row_number 窗口函数：无 column 参数",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        "close",
+        {
+          "func": "row_number",
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "date", "direction": "DESC"}]
+          },
+          "name": "rn"
+        }
+      ]
+    },
+    {
+      "_comment": "lag 窗口函数：多参数 [column, offset, default]",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-2592000",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        "close",
+        {
+          "func": "lag",
+          "column": ["close", 1, 0],
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "date", "direction": "ASC"}]
+          },
+          "name": "prev_close"
+        }
+      ]
+    },
+    {
+      "_comment": "多个窗口函数：ma_5, ma_10, row_number 共存",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-2592000",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        "close",
+        {
+          "func": "avg",
+          "column": "close",
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "date", "direction": "ASC"}],
+            "frame": "ROWS BETWEEN 4 PRECEDING AND CURRENT ROW"
+          },
+          "name": "ma_5"
+        },
+        {
+          "func": "avg",
+          "column": "close",
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "date", "direction": "ASC"}],
+            "frame": "ROWS BETWEEN 9 PRECEDING AND CURRENT ROW"
+          },
+          "name": "ma_10"
+        },
+        {
+          "func": "row_number",
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "date", "direction": "DESC"}]
+          },
+          "name": "rn"
+        }
+      ]
+    },
+    {
+      "_comment": "lag + 普通函数表达式组合：prev_close + pct_chg",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-2592000",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        "close",
+        {
+          "func": "lag",
+          "column": ["close", 1, 0],
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "date", "direction": "ASC"}]
+          },
+          "name": "prev_close"
+        },
+        {
+          "func": "round",
+          "column": [
+            {"func": "*", "column": [
+              {"func": "/", "column": [
+                {"func": "-", "column": ["close", {"func": "lag", "column": ["close", 1, 0], "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "ASC"}]}}]},
+                {"func": "lag", "column": ["close", 1, 0], "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "ASC"}]}}
+              ]},
+              100
+            ]},
+            4
+          ],
+          "name": "pct_chg"
+        }
+      ]
+    },
+    {
+      "_comment": "rank 窗口函数：按 date 分组，close 降序排名",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        "close",
+        {
+          "func": "rank",
+          "window": {
+            "partition_by": ["date"],
+            "order_by": [{"column": "close", "direction": "DESC"}]
+          },
+          "name": "price_rank"
+        }
+      ]
+    },
+    {
+      "_comment": "qualify 结构化字典：row_number() OVER (...) = 1",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "qualify": {
+        "func": "row_number",
+        "window": {
+          "partition_by": ["ths_code"],
+          "order_by": [{"column": "date", "direction": "DESC"}]
+        },
+        "op": "=",
+        "value": 1
+      }
+    },
+    {
+      "_comment": "qualify 列表格式：AND 连接多个条件（含窗口函数 + 普通列条件）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "qualify": [
+        {
+          "func": "row_number",
+          "window": {
+            "partition_by": ["ths_code", "date"],
+            "order_by": [{"column": "create_time", "direction": "DESC"}]
+          },
+          "op": "=",
+          "value": 1
+        },
+        {"column": "close", "op": ">", "value": 0}
+      ]
+    },
+    {
+      "_comment": "cbond hf 表窗口函数：按 ths_code + toDate(time) 分区，time 排序",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-3600",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "time",
+        "close",
+        {
+          "func": "avg",
+          "column": "close",
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "time", "direction": "ASC"}],
+            "frame": "ROWS BETWEEN 4 PRECEDING AND CURRENT ROW"
+          },
+          "name": "ma_5min"
+        },
+        {
+          "func": "row_number",
+          "window": {
+            "partition_by": ["ths_code"],
+            "order_by": [{"column": "time", "direction": "ASC"}]
+          },
+          "name": "bar_seq"
+        }
+      ]
+    }
+  ],
+  "output": [],
+  "computation": {
+    "external_source": "sql_test.py",
+    "class_name": "SqlTest",
+    "single": "compute",
+    "batch": ""
+  },
+  "schedule": ["****-**-** 15:30:00"]
+}

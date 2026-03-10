@@ -1,0 +1,176 @@
+{
+  "input": [
+    {
+      "_comment": "列别名：column + name",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        {"column": "close", "name": "closing_price"},
+        {"column": "volume", "name": "vol"},
+        {"column": "avg_price", "name": "vwap"}
+      ]
+    },
+    {
+      "_comment": "单参数函数：toFloat64, abs",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        {"func": "toFloat64", "column": "close", "name": "close_f"},
+        {"func": "abs", "column": "close", "name": "abs_close"}
+      ]
+    },
+    {
+      "_comment": "二元算术运算符：- / +",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        "close",
+        {"func": "-", "column": ["close", "pre_close"], "name": "price_change"},
+        {"func": "+", "column": ["high", "low"], "name": "hl_sum"},
+        {"func": "*", "column": ["close", "volume"], "name": "close_vol"}
+      ]
+    },
+    {
+      "_comment": "嵌套表达式：round(amount / volume)",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        {"func": "round", "column": {"func": "/", "column": ["amount", "volume"]}, "name": "vwap"},
+        {"func": "toFloat64", "column": {"func": "-", "column": ["close", "pre_close"]}, "name": "chg_f"}
+      ]
+    },
+    {
+      "_comment": "三层嵌套：round((close - pre_close) / pre_close * 100, 4)",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "columns": [
+        "ths_code",
+        "date",
+        "close",
+        "pre_close",
+        {
+          "func": "round",
+          "column": [
+            {"func": "*", "column": [
+              {"func": "/", "column": [
+                {"func": "-", "column": ["close", "pre_close"]},
+                "pre_close"
+              ]},
+              100
+            ]},
+            4
+          ],
+          "name": "pct_chg"
+        }
+      ]
+    },
+    {
+      "_comment": "filters 中使用表达式 dict 作为 column（toDate 对 time 字段）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-7200",
+      "end_time": "schedule_now",
+      "filters": [
+        {"column": {"func": "toDate", "column": "time"}, "op": "=", "value": "toDate(now())"},
+        {"column": "close", "op": ">", "value": 0}
+      ]
+    },
+    {
+      "_comment": "filters 中多列元组 IN：(ths_code, date) IN (...)",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_daily_quote_market"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [
+        {"column": ["ths_code", "date"], "op": "IN", "value": [["110001.SH", "2026-03-03"], ["110002.SH", "2026-03-03"]]}
+      ]
+    },
+    {
+      "_comment": "group_by 中使用表达式 dict：toDate(time)",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-7200",
+      "end_time": "schedule_now",
+      "columns": [
+        {"func": "toDate", "column": "time", "name": "dt"},
+        "ths_code",
+        {"func": "avg", "column": "close", "name": "avg_close"},
+        {"func": "max", "column": "high", "name": "max_high"}
+      ],
+      "group_by": [
+        {"func": "toDate", "column": "time"},
+        "ths_code"
+      ]
+    },
+    {
+      "_comment": "order_by 中使用表达式 dict：toDate(time) DESC, ths_code ASC",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-3600",
+      "end_time": "schedule_now",
+      "columns": ["ths_code", "time", "close"],
+      "order_by": [
+        {"column": {"func": "toDate", "column": "time"}, "direction": "DESC"},
+        {"column": "ths_code", "direction": "ASC"},
+        {"column": "close", "direction": "DESC"}
+      ],
+      "limit": 100
+    },
+    {
+      "_comment": "having 中使用函数表达式：COUNT(*) > N",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-7200",
+      "end_time": "schedule_now",
+      "columns": [
+        {"func": "toDate", "column": "time", "name": "dt"},
+        "ths_code",
+        {"func": "avg", "column": "close", "name": "avg_close"},
+        {"func": "count", "column": "*", "name": "bar_count"}
+      ],
+      "group_by": [
+        {"func": "toDate", "column": "time"},
+        "ths_code"
+      ],
+      "having": [
+        {"column": "bar_count", "op": ">", "value": 2}
+      ]
+    }
+  ],
+  "output": [],
+  "computation": {
+    "external_source": "sql_test.py",
+    "class_name": "SqlTest",
+    "single": "compute",
+    "batch": ""
+  },
+  "schedule": ["****-**-** 15:30:00"]
+}

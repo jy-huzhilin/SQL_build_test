@@ -1,6 +1,7 @@
 {
   "input": [
     {
+      "_comment": "基础 GROUP BY + HAVING（结构化字典条件）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
@@ -9,6 +10,7 @@
       "having": [{"column": "cnt", "op": ">", "value": 10}]
     },
     {
+      "_comment": "GROUP BY + HAVING（字符串兜底条件）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
@@ -17,6 +19,7 @@
       "having": ["cnt > 10 AND cnt < 1000"]
     },
     {
+      "_comment": "GROUP BY + HAVING（OR 列表条件）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -32,6 +35,7 @@
       ]
     },
     {
+      "_comment": "多列 GROUP BY + 多条件 HAVING",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -41,7 +45,52 @@
       "group_by": ["ths_code", "date"],
       "having": [
         {"column": "total_volume", "op": ">", "value": 1000},
-        {"column": "avg_close", "op": ">", "value": 50}
+        {"column": "avg_close",    "op": ">", "value": 50}
+      ]
+    },
+    {
+      "_comment": "group_by 中使用表达式 dict：toDate(time)",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-7200",
+      "end_time": "schedule_now",
+      "columns": [
+        {"func": "toDate", "column": "time", "name": "dt"},
+        "ths_code",
+        {"func": "avg", "column": "close", "name": "avg_close"},
+        {"func": "max", "column": "high",  "name": "max_high"},
+        {"func": "min", "column": "low",   "name": "min_low"},
+        {"func": "count", "column": "*",   "name": "bar_count"}
+      ],
+      "group_by": [
+        {"func": "toDate", "column": "time"},
+        "ths_code"
+      ],
+      "having": [
+        {"column": "bar_count", "op": ">=", "value": 5}
+      ]
+    },
+    {
+      "_comment": "group_by 表达式 + having 多条件",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-14400",
+      "end_time": "schedule_now",
+      "columns": [
+        {"func": "toDate", "column": "time", "name": "dt"},
+        "ths_code",
+        {"func": "avg",   "column": "close",  "name": "avg_close"},
+        {"func": "count", "column": "*",       "name": "bar_count"}
+      ],
+      "group_by": [
+        {"func": "toDate", "column": "time"},
+        "ths_code"
+      ],
+      "having": [
+        {"column": "bar_count", "op": ">=", "value": 3},
+        {"column": "avg_close", "op": ">",  "value": 0}
       ]
     }
   ],

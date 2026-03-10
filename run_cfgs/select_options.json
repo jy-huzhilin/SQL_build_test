@@ -1,12 +1,14 @@
 {
   "input": [
     {
+      "_comment": "指定列名",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
       "columns": ["ths_code", "issue_credit_rating", "issue_total_amt"]
     },
     {
+      "_comment": "DISTINCT",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
@@ -14,6 +16,7 @@
       "distinct": true
     },
     {
+      "_comment": "qualify 字符串兜底写法",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.stock_daily_quotes_non_ror"],
@@ -22,6 +25,44 @@
       "qualify": "row_number() OVER (PARTITION BY ths_code, date ORDER BY create_time DESC) = 1"
     },
     {
+      "_comment": "qualify 结构化字典（窗口函数 LHS）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "qualify": {
+        "func": "row_number",
+        "window": {
+          "partition_by": ["ths_code"],
+          "order_by": [{"column": "date", "direction": "DESC"}]
+        },
+        "op": "=",
+        "value": 1
+      }
+    },
+    {
+      "_comment": "qualify 列表格式（AND 连接窗口函数条件 + 普通列条件）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "qualify": [
+        {
+          "func": "row_number",
+          "window": {
+            "partition_by": ["ths_code", "date"],
+            "order_by": [{"column": "create_time", "direction": "DESC"}]
+          },
+          "op": "=",
+          "value": 1
+        },
+        {"column": "close", "op": ">", "value": 0}
+      ]
+    },
+    {
+      "_comment": "order_by（多列，方向混合）",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
@@ -33,6 +74,20 @@
       ]
     },
     {
+      "_comment": "order_by + 表达式列（toDate(time) DESC）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-3600",
+      "end_time": "schedule_now",
+      "order_by": [
+        {"column": {"func": "toDate", "column": "time"}, "direction": "DESC"},
+        {"column": "ths_code", "direction": "ASC"}
+      ],
+      "limit": 100
+    },
+    {
+      "_comment": "limit 单独使用",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
@@ -41,6 +96,7 @@
       "limit": 100
     },
     {
+      "_comment": "order_by + limit 组合",
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_daily_quote_market"],
