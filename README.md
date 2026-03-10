@@ -233,9 +233,79 @@ WHERE ... AND (close > 200 OR close < 50)
 ```
 
 ```sql
-WHERE ... AND ths_code IN ('110001.SH', '110002.SH')
-       AND close > 100
-       AND (volume > 10000 OR pe < 30)
+WHERE (((CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02')
+  AND ths_code IN ('110001.SH', '110002.SH'))
+  AND close > 100)
+  AND ((volume > 10000) OR (pe < 30))
+```
+
+**Item 11**：小于（`<`）
+
+```json
+{"column": "close", "op": "<", "value": 150}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE (CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02') AND close < 150
+```
+
+**Item 12**：小于等于（`<=`）
+
+```json
+{"column": "close", "op": "<=", "value": 150}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE (CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02') AND close <= 150
+```
+
+**Item 13**：`column` 为表达式 dict（`toDate(time)`）
+
+```json
+{
+  "filters": [
+    {"column": {"func": "toDate", "column": "time"}, "op": "=", "value": "toDate(now())"},
+    {"column": "close", "op": ">", "value": 0}
+  ]
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_hf_1min_market
+WHERE ((time > '2026-03-02 13:30:00' AND time <= '2026-03-02 15:30:00')
+  AND toDate(time) = toDate(now())) AND close > 0
+```
+
+**Item 14**：多列元组 IN `(ths_code, date) IN (...)`
+
+```json
+{"column": ["ths_code", "date"], "op": "IN",
+ "value": [["110001.SH", "2026-03-03"], ["110002.SH", "2026-03-03"]]}
+```
+
+```sql
+SELECT * FROM cbond.cbond_daily_quote_market
+WHERE (CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02')
+  AND (ths_code, date) IN (('110001.SH', '2026-03-03'), ('110002.SH', '2026-03-03'))
+```
+
+**Item 15**：多条件 AND（多个独立 dict）
+
+```json
+"filters": [
+  {"column": "ths_code", "op": "IN", "value": ["110001.SH", "110002.SH"]},
+  {"column": "close",    "op": ">",  "value": 0},
+  {"column": "volume",   "op": ">",  "value": 0}
+]
+```
+
+```sql
+SELECT * FROM cbond.cbond_daily_quote_market
+WHERE (((CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02')
+  AND ths_code IN ('110001.SH', '110002.SH'))
+  AND close > 0) AND volume > 0
 ```
 
 ---
