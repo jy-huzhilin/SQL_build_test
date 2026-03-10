@@ -472,7 +472,7 @@ HAVING cnt > 3 OR avg_close > 100
   "group_by": ["ths_code", "date"],
   "having": [
     {"column": "total_volume", "op": ">", "value": 1000},
-    {"column": "avg_close", "op": ">", "value": 50}
+    {"column": "avg_close",    "op": ">", "value": 50}
   ]
 }
 ```
@@ -483,6 +483,58 @@ FROM cbond.stock_daily_quotes_non_ror
 WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
 GROUP BY ths_code, date
 HAVING total_volume > 1000 AND avg_close > 50
+```
+
+**Item 5**：`group_by` 表达式 + 多聚合列 + HAVING
+
+```json
+{
+  "columns": [
+    {"func": "toDate", "column": "time", "name": "dt"},
+    "ths_code",
+    {"func": "avg",   "column": {"func": "toFloat64", "column": "close"}, "name": "avg_close"},
+    {"func": "max",   "column": {"func": "toFloat64", "column": "high"},  "name": "max_high"},
+    {"func": "min",   "column": {"func": "toFloat64", "column": "low"},   "name": "min_low"},
+    {"func": "count", "column": "*", "name": "bar_count"}
+  ],
+  "group_by": [{"func": "toDate", "column": "time"}, "ths_code"],
+  "having": [{"column": "bar_count", "op": ">=", "value": 5}]
+}
+```
+
+```sql
+SELECT ths_code, toDate(time) AS dt, avg(toFloat64(close)) AS avg_close,
+       max(toFloat64(high)) AS max_high, min(toFloat64(low)) AS min_low, count(*) AS bar_count
+FROM cbond.cbond_hf_1min_market
+WHERE time > '2026-03-02 13:30:00' AND time <= '2026-03-02 15:30:00'
+GROUP BY toDate(time), ths_code
+HAVING bar_count >= 5
+```
+
+**Item 6**：`group_by` 表达式 + HAVING 多条件（AND）
+
+```json
+{
+  "columns": [
+    {"func": "toDate", "column": "time", "name": "dt"},
+    "ths_code",
+    {"func": "avg",   "column": {"func": "toFloat64", "column": "close"}, "name": "avg_close"},
+    {"func": "count", "column": "*", "name": "bar_count"}
+  ],
+  "group_by": [{"func": "toDate", "column": "time"}, "ths_code"],
+  "having": [
+    {"column": "bar_count", "op": ">=", "value": 3},
+    {"column": "avg_close", "op": ">",  "value": 0}
+  ]
+}
+```
+
+```sql
+SELECT ths_code, toDate(time) AS dt, avg(toFloat64(close)) AS avg_close, count(*) AS bar_count
+FROM cbond.cbond_hf_1min_market
+WHERE time > '2026-03-02 11:30:00' AND time <= '2026-03-02 15:30:00'
+GROUP BY toDate(time), ths_code
+HAVING bar_count >= 3 AND avg_close > 0
 ```
 
 ---
