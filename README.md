@@ -647,10 +647,10 @@ HAVING bar_count >= 3 AND avg_close > 0
 ```sql
 SELECT * FROM (
   SELECT MAX(close) AS max_price, ths_code
-  FROM cbond.stock_daily_quotes_non_ror
+  FROM cbond.stock_daily_quotes_non_ror AS sub
   WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
   GROUP BY ths_code
-) AS quotes_agg
+) AS sub
 WHERE max_price > 100
 ```
 
@@ -681,12 +681,14 @@ WHERE max_price > 100
 ```sql
 SELECT * FROM (
   SELECT AVG(close) AS avg_price, COUNT(*) AS trade_cnt, ths_code
-  FROM cbond.stock_daily_quotes_non_ror
+  FROM cbond.stock_daily_quotes_non_ror AS sub
   WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
   GROUP BY ths_code
-) AS avg_prices
+) AS sub
 WHERE avg_price >= 50 AND avg_price <= 200
 ```
+
+> `table` dict 中的 `name` 字段同时作为内层表别名和外层子查询别名（SQL 中为 `AS sub`）。`sources` 层的 `name`（如 `quotes_agg`）仅作为框架内部的数据键，不体现在 SQL 里。
 
 ---
 
