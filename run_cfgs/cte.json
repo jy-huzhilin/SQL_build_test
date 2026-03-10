@@ -85,7 +85,7 @@
             "columns": ["ths_code", "issue_total_amt"],
             "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
           },
-          "filters": [{"column": "issue_total_amt", "op": ">", "value": 0}]
+          "filters": [{"column": "ths_code", "op": "LIKE", "value": "11%"}]
         },
         {
           "name": "recent_quote",
