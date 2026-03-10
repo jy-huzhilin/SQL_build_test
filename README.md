@@ -1359,6 +1359,221 @@ QUALIFY row_number() OVER (PARTITION BY ths_code ORDER BY close DESC) <= 3
 
 ---
 
+## expressions.json — 列表达式与嵌套函数
+
+展示 `columns`、`filters`、`group_by`、`order_by`、`having` 中使用函数、算术运算符和嵌套表达式的各种写法。
+
+**Item 1**：列别名（`column` + `name`）
+
+```json
+{
+  "columns": [
+    "ths_code",
+    "date",
+    {"column": "close",     "name": "closing_price"},
+    {"column": "volume",    "name": "vol"},
+    {"column": "avg_price", "name": "vwap"}
+  ]
+}
+```
+
+```sql
+SELECT date, ths_code, close AS closing_price, volume AS vol, avg_price AS vwap
+FROM cbond.cbond_daily_quote_market
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 2**：单参数函数（`toFloat64`、`abs`）
+
+```json
+{
+  "columns": [
+    "ths_code",
+    "date",
+    {"func": "toFloat64", "column": "close", "name": "close_f"},
+    {"func": "abs",       "column": "close", "name": "abs_close"}
+  ]
+}
+```
+
+```sql
+SELECT date, ths_code, toFloat64(close) AS close_f, abs(close) AS abs_close
+FROM cbond.cbond_daily_quote_market
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 3**：二元算术运算符（`-` / `+` / `*`）
+
+```json
+{
+  "columns": [
+    "ths_code", "date", "close",
+    {"func": "-", "column": ["close", "pre_close"], "name": "price_change"},
+    {"func": "+", "column": ["high", "low"],         "name": "hl_sum"},
+    {"func": "*", "column": ["close", "volume"],     "name": "close_vol"}
+  ]
+}
+```
+
+```sql
+SELECT close, date, ths_code,
+       close - pre_close AS price_change,
+       high + low AS hl_sum,
+       close * volume AS close_vol
+FROM cbond.cbond_daily_quote_market
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 4**：嵌套表达式（`round(amount / volume)`、`toFloat64(close - pre_close)`）
+
+```json
+{
+  "columns": [
+    "ths_code", "date",
+    {"func": "round",     "column": {"func": "/", "column": ["amount", "volume"]}, "name": "vwap"},
+    {"func": "toFloat64", "column": {"func": "-", "column": ["close", "pre_close"]}, "name": "chg_f"}
+  ]
+}
+```
+
+```sql
+SELECT date, ths_code, round(amount / volume) AS vwap, toFloat64(close - pre_close) AS chg_f
+FROM cbond.cbond_daily_quote_market
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 5**：三层嵌套 `round((close - pre_close) / pre_close * 100, 4)`
+
+```json
+{
+  "func": "round",
+  "column": [
+    {"func": "*", "column": [
+      {"func": "/", "column": [
+        {"func": "-", "column": ["close", "pre_close"]},
+        "pre_close"
+      ]},
+      100
+    ]},
+    4
+  ],
+  "name": "pct_chg"
+}
+```
+
+```sql
+SELECT close, date, pre_close, ths_code,
+       round(close - pre_close / pre_close * 100, 4) AS pct_chg
+FROM cbond.cbond_daily_quote_market
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+> **注意**：sqlglot 渲染嵌套算术时依赖 SQL 运算符优先级，不会自动为低优先级的子表达式补全括号。上例中配置意图是 `((close - pre_close) / pre_close) * 100`，但渲染输出为 `close - pre_close / pre_close * 100`（按 SQL 优先级解析为 `close - (pre_close / pre_close * 100)`）。当表达式中存在减法/加法与乘法/除法混合嵌套时，建议改用字符串列名直接写完整 SQL 表达式（如 `"(close - pre_close) / pre_close * 100"`）以确保运算顺序正确。
+
+**Item 6**：`filters` 中使用函数表达式列（`toDate(time) = toDate(now())`）
+
+```json
+{
+  "filters": [
+    {"column": {"func": "toDate", "column": "time"}, "op": "=", "value": "toDate(now())"},
+    {"column": "close", "op": ">", "value": 0}
+  ]
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_hf_1min_market
+WHERE ((time > '2026-03-02 13:30:00' AND time <= '2026-03-02 15:30:00')
+  AND toDate(time) = toDate(now())) AND close > 0
+```
+
+**Item 7**：多列元组 IN `(ths_code, date) IN (...)`
+
+```json
+{
+  "filters": [
+    {"column": ["ths_code", "date"], "op": "IN",
+     "value": [["110001.SH", "2026-03-03"], ["110002.SH", "2026-03-03"]]}
+  ]
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_daily_quote_market
+WHERE (CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02')
+  AND (ths_code, date) IN (('110001.SH', '2026-03-03'), ('110002.SH', '2026-03-03'))
+```
+
+**Item 8**：`group_by` 中使用表达式 dict（`toDate(time)`）
+
+```json
+{
+  "columns": [
+    {"func": "toDate", "column": "time", "name": "dt"},
+    "ths_code",
+    {"func": "avg", "column": {"func": "toFloat64", "column": "close"}, "name": "avg_close"},
+    {"func": "max", "column": {"func": "toFloat64", "column": "high"},  "name": "max_high"}
+  ],
+  "group_by": [
+    {"func": "toDate", "column": "time"},
+    "ths_code"
+  ]
+}
+```
+
+```sql
+SELECT ths_code, toDate(time) AS dt, avg(toFloat64(close)) AS avg_close, max(toFloat64(high)) AS max_high
+FROM cbond.cbond_hf_1min_market
+WHERE time > '2026-03-02 13:30:00' AND time <= '2026-03-02 15:30:00'
+GROUP BY toDate(time), ths_code
+```
+
+**Item 9**：`order_by` 中使用表达式 dict（`toDate(time) DESC`）
+
+```json
+{
+  "columns": ["ths_code", "time", "close"],
+  "order_by": [
+    {"column": {"func": "toDate", "column": "time"}, "direction": "DESC"},
+    {"column": "ths_code", "direction": "ASC"},
+    {"column": "close",    "direction": "DESC"}
+  ],
+  "limit": 100
+}
+```
+
+```sql
+SELECT close, ths_code, time FROM cbond.cbond_hf_1min_market
+WHERE time > '2026-03-02 14:30:00' AND time <= '2026-03-02 15:30:00'
+ORDER BY toDate(time) DESC, ths_code ASC, close DESC
+LIMIT 100
+```
+
+**Item 10**：`having` 中使用聚合列过滤
+
+```json
+{
+  "columns": [
+    {"func": "toDate", "column": "time", "name": "dt"},
+    "ths_code",
+    {"func": "avg",   "column": {"func": "toFloat64", "column": "close"}, "name": "avg_close"},
+    {"func": "count", "column": "*", "name": "bar_count"}
+  ],
+  "group_by": [{"func": "toDate", "column": "time"}, "ths_code"],
+  "having": [{"column": "bar_count", "op": ">", "value": 2}]
+}
+```
+
+```sql
+SELECT ths_code, toDate(time) AS dt, avg(toFloat64(close)) AS avg_close, count(*) AS bar_count
+FROM cbond.cbond_hf_1min_market
+WHERE time > '2026-03-02 13:30:00' AND time <= '2026-03-02 15:30:00'
+GROUP BY toDate(time), ths_code
+HAVING bar_count > 2
+```
+
+---
+
 ## 常见注意事项
 
 1. **字符串值需含引号**：过滤条件中字符串标量值需写成 `"'AAA'"` 形式（外层双引号是 JSON，内层单引号是 SQL）。
