@@ -37,7 +37,7 @@
       "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
     },
     {
-      "_comment": "CTE 的 table 为子查询 dict（name 必填）",
+      "_comment": "CTE 子查询：内层过滤，外层加 ORDER BY + LIMIT（取上市最早的 50 只 AAA 债）",
       "type": "data",
       "db": "basic_data_db",
       "with": [
@@ -47,14 +47,15 @@
             "table": "cbond.cbond_basic_info",
             "columns": ["ths_code", "listed_date"],
             "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
-          }
+          },
+          "order_by": [{"column": "listed_date", "direction": "ASC"}],
+          "limit": 50
         }
       ],
-      "sources": ["aaa_bonds"],
-      "columns": ["ths_code", "listed_date"]
+      "sources": ["aaa_bonds"]
     },
     {
-      "_comment": "CTE 子查询（含 GROUP BY）：聚合后作为 CTE",
+      "_comment": "CTE 子查询：内层聚合，外层对聚合结果过滤",
       "type": "data",
       "db": "basic_data_db",
       "with": [
@@ -66,14 +67,14 @@
             "group_by": ["ths_code"],
             "start_time": "-604800",
             "end_time": "schedule_now"
-          }
+          },
+          "filters": [{"column": "trade_days", "op": ">=", "value": 3}]
         }
       ],
-      "sources": ["avg_close_cte"],
-      "filters": [{"column": "trade_days", "op": ">=", "value": 3}]
+      "sources": ["avg_close_cte"]
     },
     {
-      "_comment": "两个 CTE 子查询互相联结",
+      "_comment": "两个 CTE 子查询互相联结（各自内层预处理，外层再过滤）",
       "type": "data",
       "db": "basic_data_db",
       "with": [
@@ -81,9 +82,10 @@
           "name": "cbond_aaa",
           "table": {
             "table": "cbond.cbond_basic_info",
-            "columns": ["ths_code"],
+            "columns": ["ths_code", "issue_total_amt"],
             "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
-          }
+          },
+          "filters": [{"column": "issue_total_amt", "op": ">", "value": 0}]
         },
         {
           "name": "recent_quote",
@@ -92,7 +94,8 @@
             "columns": ["ths_code", "date", "close"],
             "start_time": "-604800",
             "end_time": "schedule_now"
-          }
+          },
+          "filters": [{"column": "close", "op": ">", "value": 0}]
         }
       ],
       "sources": ["cbond_aaa"],
