@@ -120,8 +120,8 @@
       "columns": [
         {"func": "toDate", "column": "time", "name": "dt"},
         "ths_code",
-        {"func": "avg", "column": "close", "name": "avg_close"},
-        {"func": "max", "column": "high", "name": "max_high"}
+        {"func": "avg", "column": {"func": "toFloat64", "column": "close"}, "name": "avg_close"},
+        {"func": "max", "column": {"func": "toFloat64", "column": "high"}, "name": "max_high"}
       ],
       "group_by": [
         {"func": "toDate", "column": "time"},
@@ -153,7 +153,7 @@
       "columns": [
         {"func": "toDate", "column": "time", "name": "dt"},
         "ths_code",
-        {"func": "avg", "column": "close", "name": "avg_close"},
+        {"func": "avg", "column": {"func": "toFloat64", "column": "close"}, "name": "avg_close"},
         {"func": "count", "column": "*", "name": "bar_count"}
       ],
       "group_by": [

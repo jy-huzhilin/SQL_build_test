@@ -58,9 +58,9 @@
       "columns": [
         {"func": "toDate", "column": "time", "name": "dt"},
         "ths_code",
-        {"func": "avg", "column": "close", "name": "avg_close"},
-        {"func": "max", "column": "high",  "name": "max_high"},
-        {"func": "min", "column": "low",   "name": "min_low"},
+        {"func": "avg", "column": {"func": "toFloat64", "column": "close"}, "name": "avg_close"},
+        {"func": "max", "column": {"func": "toFloat64", "column": "high"},  "name": "max_high"},
+        {"func": "min", "column": {"func": "toFloat64", "column": "low"},   "name": "min_low"},
         {"func": "count", "column": "*",   "name": "bar_count"}
       ],
       "group_by": [
@@ -81,7 +81,7 @@
       "columns": [
         {"func": "toDate", "column": "time", "name": "dt"},
         "ths_code",
-        {"func": "avg",   "column": "close",  "name": "avg_close"},
+        {"func": "avg",   "column": {"func": "toFloat64", "column": "close"},  "name": "avg_close"},
         {"func": "count", "column": "*",       "name": "bar_count"}
       ],
       "group_by": [
