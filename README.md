@@ -1463,12 +1463,10 @@ WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
 
 ```sql
 SELECT close, date, pre_close, ths_code,
-       round(close - pre_close / pre_close * 100, 4) AS pct_chg
+       round(((close - pre_close) / pre_close) * 100, 4) AS pct_chg
 FROM cbond.cbond_daily_quote_market
 WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
 ```
-
-> **注意**：sqlglot 渲染嵌套算术时依赖 SQL 运算符优先级，不会自动为低优先级的子表达式补全括号。上例中配置意图是 `((close - pre_close) / pre_close) * 100`，但渲染输出为 `close - pre_close / pre_close * 100`（按 SQL 优先级解析为 `close - (pre_close / pre_close * 100)`）。当表达式中存在减法/加法与乘法/除法混合嵌套时，建议改用字符串列名直接写完整 SQL 表达式（如 `"(close - pre_close) / pre_close * 100"`）以确保运算顺序正确。
 
 **Item 6**：`filters` 中使用函数表达式列（`toDate(time) = toDate(now())`）
 
