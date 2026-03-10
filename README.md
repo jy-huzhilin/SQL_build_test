@@ -360,7 +360,62 @@ WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
 QUALIFY row_number() OVER (PARTITION BY ths_code, date ORDER BY create_time DESC) = 1
 ```
 
-**Item 4**：ORDER BY
+**Item 4**：QUALIFY 结构化字典（窗口函数 dict）
+
+```json
+{
+  "sources": ["cbond.stock_daily_quotes_non_ror"],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "qualify": {
+    "func": "row_number",
+    "window": {
+      "partition_by": ["ths_code"],
+      "order_by": [{"column": "date", "direction": "DESC"}]
+    },
+    "op": "=",
+    "value": 1
+  }
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+QUALIFY row_number() OVER (PARTITION BY ths_code ORDER BY date DESC) = 1
+```
+
+**Item 5**：QUALIFY 列表格式（窗口函数条件 AND 普通列条件）
+
+```json
+{
+  "sources": ["cbond.stock_daily_quotes_non_ror"],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
+  "qualify": [
+    {
+      "func": "row_number",
+      "window": {
+        "partition_by": ["ths_code", "date"],
+        "order_by": [{"column": "create_time", "direction": "DESC"}]
+      },
+      "op": "=",
+      "value": 1
+    },
+    {"column": "close", "op": ">", "value": 0}
+  ]
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+QUALIFY row_number() OVER (PARTITION BY ths_code, date ORDER BY create_time DESC) = 1 AND close > 0
+```
+
+> `qualify` 支持三种格式：字符串（原样拼入）、单个 dict（`func` + `window` + `op` + `value`）、列表（各条件以 AND 连接，列表元素可混合窗口函数 dict 和普通列 dict）。
+
+**Item 6**：ORDER BY（多列，方向混合）
 
 ```json
 {
@@ -380,7 +435,29 @@ WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
 ORDER BY date DESC, ths_code ASC
 ```
 
-**Item 5**：LIMIT
+**Item 7**：ORDER BY 表达式列（`toDate(time) DESC`）+ LIMIT
+
+```json
+{
+  "sources": ["cbond.cbond_hf_1min_market"],
+  "start_time": "-3600",
+  "end_time": "schedule_now",
+  "order_by": [
+    {"column": {"func": "toDate", "column": "time"}, "direction": "DESC"},
+    {"column": "ths_code", "direction": "ASC"}
+  ],
+  "limit": 100
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_hf_1min_market
+WHERE time > '2026-03-02 14:30:00' AND time <= '2026-03-02 15:30:00'
+ORDER BY toDate(time) DESC, ths_code ASC
+LIMIT 100
+```
+
+**Item 8**：LIMIT 单独使用
 
 ```json
 {
@@ -397,10 +474,13 @@ WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
 LIMIT 100
 ```
 
-**Item 6**：ORDER BY + LIMIT
+**Item 9**：ORDER BY + LIMIT 组合
 
 ```json
 {
+  "sources": ["cbond.cbond_daily_quote_market"],
+  "start_time": "-604800",
+  "end_time": "schedule_now",
   "order_by": [{"column": "date", "direction": "DESC"}],
   "limit": 50
 }
