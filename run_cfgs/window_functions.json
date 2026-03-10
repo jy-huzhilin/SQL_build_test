@@ -214,7 +214,7 @@
         "close",
         {
           "func": "avg",
-          "column": "close",
+          "column": {"func": "toFloat64", "column": "close"},
           "window": {
             "partition_by": ["ths_code"],
             "order_by": [{"column": "time", "direction": "ASC"}],
