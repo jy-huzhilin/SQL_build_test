@@ -108,6 +108,130 @@ WHERE CAST(date AS DATE) > '2026-01-09' AND CAST(date AS DATE) <= '2026-03-02'
 
 展示不同 schema 类型的表（静态表、日期型、datetime 型）的查询方式。系统根据表的时间字段类型自动选择过滤形式，无需在配置中手动指定。
 
+**Item 1**：静态表（无时间字段）
+
+```json
+{"sources": ["cbond.future_basic_info"]}
+```
+
+```sql
+SELECT * FROM cbond.future_basic_info
+```
+
+**Item 2**：日期型时间字段（非标准字段名 `calendardate`）
+
+```json
+{
+  "sources": ["cbond.self_trading_dict"],
+  "start_time": "-604800",
+  "end_time": "schedule_now"
+}
+```
+
+```sql
+SELECT * FROM cbond.self_trading_dict
+WHERE CAST(calendardate AS DATE) > '2026-02-11' AND CAST(calendardate AS DATE) <= '2026-03-02'
+```
+
+> 时间字段名不固定为 `date`，系统会从 schema 中查找实际时间字段名（`calendardate`）并自动使用。
+
+**Item 3**：datetime 型时间字段（`time`，1 小时范围）
+
+```json
+{
+  "sources": ["cbond.cbond_hf_1min_market"],
+  "start_time": "-3600",
+  "end_time": "schedule_now"
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_hf_1min_market
+WHERE time > '2026-03-02 14:30:00' AND time <= '2026-03-02 15:30:00'
+```
+
+**Item 4**：datetime 型时间字段（`ctime`，`-86400` 秒跨越周末）
+
+```json
+{
+  "sources": ["cbond.cbond_bulletin"],
+  "start_time": "-86400",
+  "end_time": "schedule_now"
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_bulletin
+WHERE ctime > '2026-02-27 15:30:00' AND ctime <= '2026-03-02 15:30:00'
+```
+
+> `-86400` 秒（1 个自然日）偏移后落在非交易日（2026-03-01 周日、2026-02-28 周六），系统自动向前跳转至最近交易日 `2026-02-27`。字段名 `ctime` 由 schema 自动检测。
+
+**Item 5**：日期型时间字段（`date`，30 个交易日）
+
+```json
+{
+  "sources": ["cbond.macro_fundamentals"],
+  "start_time": "-2592000",
+  "end_time": "schedule_now"
+}
+```
+
+```sql
+SELECT * FROM cbond.macro_fundamentals
+WHERE CAST(date AS DATE) > '2026-01-09' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 6**：日期型时间字段（`info_date`，非标准字段名）
+
+```json
+{
+  "sources": ["cbond.report_kg"],
+  "start_time": "-2592000",
+  "end_time": "schedule_now"
+}
+```
+
+```sql
+SELECT * FROM cbond.report_kg
+WHERE CAST(info_date AS DATE) > '2026-01-09' AND CAST(info_date AS DATE) <= '2026-03-02'
+```
+
+**Item 7**：日期型时间字段（`TRADE_DATE`，大写字段名）
+
+```json
+{
+  "sources": ["cbond.dy1d_exposure_cne6_sw21"],
+  "start_time": "-2592000",
+  "end_time": "schedule_now"
+}
+```
+
+```sql
+SELECT * FROM cbond.dy1d_exposure_cne6_sw21
+WHERE CAST(TRADE_DATE AS DATE) > '2026-01-09' AND CAST(TRADE_DATE AS DATE) <= '2026-03-02'
+```
+
+> 时间字段名大小写由 schema 决定，系统原样使用。
+
+**Item 8**：多个静态表同时查询
+
+```json
+{
+  "sources": ["cbond.cbond_basic_info", "cbond.future_basic_info"]
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_basic_info
+```
+
+```sql
+SELECT * FROM cbond.future_basic_info
+```
+
+> `sources` 中有多个表时，每张表独立生成一条 SQL 并分别执行，结果以表名为键分别返回。
+
 ---
 
 ## filters.json — 过滤条件
