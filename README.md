@@ -2094,6 +2094,262 @@ HAVING bar_count > 2
 
 ---
 
+## window_functions.json — 窗口函数
+
+在 `columns` 中使用 `window` 字段定义窗口函数，支持 `PARTITION BY`、`ORDER BY`、`ROWS BETWEEN` 帧规格，以及 `QUALIFY` 中的窗口条件。
+
+**Item 1**：`avg` 窗口函数（5 日移动均线，ROWS 帧）
+
+```json
+{
+  "sources": ["cbond.stock_daily_quotes_non_ror"],
+  "start_time": "-2592000",
+  "end_time": "schedule_now",
+  "columns": [
+    "ths_code", "date", "close",
+    {
+      "func": "avg",
+      "column": "close",
+      "window": {
+        "partition_by": ["ths_code"],
+        "order_by": [{"column": "date", "direction": "ASC"}],
+        "frame": "ROWS BETWEEN 4 PRECEDING AND CURRENT ROW"
+      },
+      "name": "ma_5"
+    }
+  ]
+}
+```
+
+```sql
+SELECT close, date, ths_code,
+       avg(close) OVER (PARTITION BY ths_code ORDER BY date ASC ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS ma_5
+FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-01-09' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 2**：`row_number` 窗口函数（无 `column` 参数）
+
+```json
+{
+  "columns": [
+    "ths_code", "date", "close",
+    {
+      "func": "row_number",
+      "window": {
+        "partition_by": ["ths_code"],
+        "order_by": [{"column": "date", "direction": "DESC"}]
+      },
+      "name": "rn"
+    }
+  ]
+}
+```
+
+```sql
+SELECT close, date, ths_code,
+       row_number() OVER (PARTITION BY ths_code ORDER BY date DESC) AS rn
+FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 3**：`lag` 窗口函数（多参数 `[column, offset, default]`）
+
+```json
+{
+  "columns": [
+    "ths_code", "date", "close",
+    {
+      "func": "lag",
+      "column": ["close", 1, 0],
+      "window": {
+        "partition_by": ["ths_code"],
+        "order_by": [{"column": "date", "direction": "ASC"}]
+      },
+      "name": "prev_close"
+    }
+  ]
+}
+```
+
+```sql
+SELECT close, date, ths_code,
+       lagInFrame(close, 1, 0) OVER (PARTITION BY ths_code ORDER BY date ASC) AS prev_close
+FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-01-09' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+> ClickHouse 中 `lag` 映射为 `lagInFrame`，系统自动转换。
+
+**Item 4**：多个窗口函数共存（`ma_5`、`ma_10`、`row_number`）
+
+```json
+{
+  "columns": [
+    "ths_code", "date", "close",
+    {"func": "avg", "column": "close",
+     "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "ASC"}], "frame": "ROWS BETWEEN 4 PRECEDING AND CURRENT ROW"},
+     "name": "ma_5"},
+    {"func": "avg", "column": "close",
+     "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "ASC"}], "frame": "ROWS BETWEEN 9 PRECEDING AND CURRENT ROW"},
+     "name": "ma_10"},
+    {"func": "row_number",
+     "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "DESC"}]},
+     "name": "rn"}
+  ]
+}
+```
+
+```sql
+SELECT close, date, ths_code,
+       avg(close) OVER (PARTITION BY ths_code ORDER BY date ASC ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS ma_5,
+       avg(close) OVER (PARTITION BY ths_code ORDER BY date ASC ROWS BETWEEN 9 PRECEDING AND CURRENT ROW) AS ma_10,
+       row_number() OVER (PARTITION BY ths_code ORDER BY date DESC) AS rn
+FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-01-09' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 5**：`lag` + 普通函数嵌套（`pct_chg` = `round((close - lag) / lag * 100, 4)`）
+
+```json
+{
+  "columns": [
+    "ths_code", "date", "close",
+    {"func": "lag", "column": ["close", 1, 0],
+     "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "ASC"}]},
+     "name": "prev_close"},
+    {"func": "round",
+     "column": [
+       {"func": "*", "column": [
+         {"func": "/", "column": [
+           {"func": "-", "column": ["close",
+             {"func": "lag", "column": ["close", 1, 0],
+              "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "ASC"}]}}]},
+           {"func": "lag", "column": ["close", 1, 0],
+            "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "ASC"}]}}
+         ]},
+         100
+       ]},
+       4
+     ],
+     "name": "pct_chg"}
+  ]
+}
+```
+
+```sql
+SELECT close, date, ths_code,
+       lagInFrame(close, 1, 0) OVER (PARTITION BY ths_code ORDER BY date ASC) AS prev_close,
+       round(((close - lagInFrame(close, 1, 0) OVER (PARTITION BY ths_code ORDER BY date ASC))
+              / lagInFrame(close, 1, 0) OVER (PARTITION BY ths_code ORDER BY date ASC)) * 100, 4) AS pct_chg
+FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-01-09' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 6**：`rank` 窗口函数（按日期分区，价格降序排名）
+
+```json
+{
+  "columns": [
+    "ths_code", "date", "close",
+    {
+      "func": "rank",
+      "window": {
+        "partition_by": ["date"],
+        "order_by": [{"column": "close", "direction": "DESC"}]
+      },
+      "name": "price_rank"
+    }
+  ]
+}
+```
+
+```sql
+SELECT close, date, ths_code,
+       rank() OVER (PARTITION BY date ORDER BY close DESC) AS price_rank
+FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+```
+
+**Item 7**：`qualify` 结构化字典（`row_number() OVER (...) = 1`）
+
+```json
+{
+  "qualify": {
+    "func": "row_number",
+    "window": {"partition_by": ["ths_code"], "order_by": [{"column": "date", "direction": "DESC"}]},
+    "op": "=",
+    "value": 1
+  }
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+QUALIFY row_number() OVER (PARTITION BY ths_code ORDER BY date DESC) = 1
+```
+
+**Item 8**：`qualify` 列表格式（窗口函数条件 AND 普通列条件）
+
+```json
+{
+  "qualify": [
+    {"func": "row_number",
+     "window": {"partition_by": ["ths_code", "date"], "order_by": [{"column": "create_time", "direction": "DESC"}]},
+     "op": "=", "value": 1},
+    {"column": "close", "op": ">", "value": 0}
+  ]
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+QUALIFY row_number() OVER (PARTITION BY ths_code, date ORDER BY create_time DESC) = 1 AND close > 0
+```
+
+**Item 9**：高频表窗口函数（String 列用 `toFloat64` 包装，`ROWS` 帧）
+
+```json
+{
+  "sources": ["cbond.cbond_hf_1min_market"],
+  "start_time": "-3600",
+  "end_time": "schedule_now",
+  "columns": [
+    "ths_code", "time", "close",
+    {
+      "func": "avg",
+      "column": {"func": "toFloat64", "column": "close"},
+      "window": {
+        "partition_by": ["ths_code"],
+        "order_by": [{"column": "time", "direction": "ASC"}],
+        "frame": "ROWS BETWEEN 4 PRECEDING AND CURRENT ROW"
+      },
+      "name": "ma_5min"
+    },
+    {
+      "func": "row_number",
+      "window": {
+        "partition_by": ["ths_code"],
+        "order_by": [{"column": "time", "direction": "ASC"}]
+      },
+      "name": "bar_seq"
+    }
+  ]
+}
+```
+
+```sql
+SELECT close, ths_code, time,
+       avg(toFloat64(close)) OVER (PARTITION BY ths_code ORDER BY time ASC ROWS BETWEEN 4 PRECEDING AND CURRENT ROW) AS ma_5min,
+       row_number() OVER (PARTITION BY ths_code ORDER BY time ASC) AS bar_seq
+FROM cbond.cbond_hf_1min_market
+WHERE time > '2026-03-02 14:30:00' AND time <= '2026-03-02 15:30:00'
+```
+
+---
+
 ## 常见注意事项
 
 1. **字符串值需含引号**：过滤条件中字符串标量值需写成 `"'AAA'"` 形式（外层双引号是 JSON，内层单引号是 SQL）。
