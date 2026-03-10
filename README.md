@@ -652,6 +652,123 @@ SELECT * FROM cte_cbond
 WHERE issue_credit_rating = 'AAA'
 ```
 
+**Item 4**：CTE 子查询 — 内层过滤，外层加 ORDER BY + LIMIT
+
+当 CTE 的 `table` 为 dict（子查询）时，外层可在子查询结果之上再加 `order_by`、`limit`、`filters` 等条件。
+
+```json
+{
+  "with": [
+    {
+      "name": "aaa_bonds",
+      "table": {
+        "table": "cbond.cbond_basic_info",
+        "columns": ["ths_code", "listed_date"],
+        "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
+      },
+      "order_by": [{"column": "listed_date", "direction": "ASC"}],
+      "limit": 50
+    }
+  ],
+  "sources": ["aaa_bonds"]
+}
+```
+
+```sql
+WITH aaa_bonds AS (
+  SELECT * FROM (
+    SELECT listed_date, ths_code FROM cbond.cbond_basic_info WHERE issue_credit_rating = 'AAA'
+  )
+  ORDER BY listed_date ASC
+  LIMIT 50
+)
+SELECT * FROM aaa_bonds
+```
+
+**Item 5**：CTE 子查询 — 内层聚合，外层对聚合列过滤
+
+```json
+{
+  "with": [
+    {
+      "name": "avg_close_cte",
+      "table": {
+        "table": "cbond.stock_daily_quotes_non_ror",
+        "columns": ["ths_code", "AVG(close) AS avg_close", "COUNT(*) AS trade_days"],
+        "group_by": ["ths_code"],
+        "start_time": "-604800",
+        "end_time": "schedule_now"
+      },
+      "filters": [{"column": "trade_days", "op": ">=", "value": 3}]
+    }
+  ],
+  "sources": ["avg_close_cte"]
+}
+```
+
+```sql
+WITH avg_close_cte AS (
+  SELECT * FROM (
+    SELECT AVG(close) AS avg_close, COUNT(*) AS trade_days, ths_code
+    FROM cbond.stock_daily_quotes_non_ror
+    WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+    GROUP BY ths_code
+  )
+  WHERE trade_days >= 3
+)
+SELECT * FROM avg_close_cte
+```
+
+**Item 6**：两个 CTE 子查询互相联结（各自内层预处理 + 外层再过滤）
+
+```json
+{
+  "with": [
+    {
+      "name": "cbond_aaa",
+      "table": {
+        "table": "cbond.cbond_basic_info",
+        "columns": ["ths_code", "issue_total_amt"],
+        "filters": [{"column": "issue_credit_rating", "op": "=", "value": "'AAA'"}]
+      },
+      "filters": [{"column": "ths_code", "op": "LIKE", "value": "11%"}]
+    },
+    {
+      "name": "recent_quote",
+      "table": {
+        "table": "cbond.cbond_daily_quote_market",
+        "columns": ["ths_code", "date", "close"],
+        "start_time": "-604800",
+        "end_time": "schedule_now"
+      },
+      "filters": [{"column": "close", "op": ">", "value": 0}]
+    }
+  ],
+  "sources": ["cbond_aaa"],
+  "join": [{"table": "recent_quote", "type": "INNER", "on": "cbond_aaa.ths_code = recent_quote.ths_code"}]
+}
+```
+
+```sql
+WITH cbond_aaa AS (
+  SELECT * FROM (
+    SELECT issue_total_amt, ths_code FROM cbond.cbond_basic_info WHERE issue_credit_rating = 'AAA'
+  )
+  WHERE ths_code LIKE '11%'
+),
+recent_quote AS (
+  SELECT * FROM (
+    SELECT close, date, ths_code FROM cbond.cbond_daily_quote_market
+    WHERE CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02'
+  )
+  WHERE (CAST(date AS DATE) > '1969-12-31' AND CAST(date AS DATE) <= '2026-03-02') AND close > 0
+)
+SELECT * FROM cbond_aaa
+INNER JOIN recent_quote ON cbond_aaa.ths_code = recent_quote.ths_code
+```
+
+> **注**：当 CTE 的 `table` 为 dict 且外层 CTE 定义中未显式设置 `start_time`/`end_time` 时，系统会对外层包装注入默认时间范围（`start_time` 默认 `earliest` → `1969-12-31`，`end_time` 默认 `schedule_now`）。这是框架的既定行为。
+
 ---
 
 ## sampling.json — 时序采样
