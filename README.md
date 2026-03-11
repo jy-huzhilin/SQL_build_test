@@ -266,7 +266,7 @@ SELECT * FROM cbond.cbond_basic_info
 WHERE issue_credit_rating = 'AAA'
 ```
 
-> **注**：字符串值需在配置中手动加引号，写作 `"'AAA'"` 而非 `"AAA"`，否则生成的 SQL 中缺少引号。数值型直接写数字即可。
+> **注**：字符串值无需手动加引号，系统会自动识别并加引号，写作 `"value": "AAA"` 即可生成 `= 'AAA'`。若已手动加引号（如 `"'AAA'"`），系统也会自动规范化，不会双重加引号。数值型直接写数字。SQL 函数表达式（如 `"toDate(now())"`）会被自动识别为表达式，不加引号。
 
 **Item 3**：大于
 
@@ -295,7 +295,8 @@ WHERE ... AND close >= 100
 ```
 
 ```sql
-WHERE ths_code LIKE 11%
+SELECT * FROM cbond.cbond_basic_info
+WHERE ths_code LIKE '11%'
 ```
 
 **Item 6**：IN 列表
@@ -340,7 +341,7 @@ WHERE ... AND close BETWEEN 50 AND 200
 ```
 
 ```sql
-WHERE ... AND (close > 200 OR close < 50)
+WHERE (CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02') AND ((close > 200) OR (close < 50))
 ```
 
 **Item 10**：AND + OR 混合
@@ -385,7 +386,7 @@ SELECT * FROM cbond.stock_daily_quotes_non_ror
 WHERE (CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02') AND close <= 150
 ```
 
-**Item 13**：`column` 为表达式 dict（`toDate(time)`）
+**Item 13**：`column` 为表达式 dict，`value` 为 SQL 函数表达式
 
 ```json
 {
@@ -401,6 +402,8 @@ SELECT * FROM cbond.cbond_hf_1min_market
 WHERE ((time > '2026-03-02 13:30:00' AND time <= '2026-03-02 15:30:00')
   AND toDate(time) = toDate(now())) AND close > 0
 ```
+
+> **注**：`"value": "toDate(now())"` 是 SQL 函数调用，系统自动识别后原样嵌入，不会错误地加引号变成字符串字面量 `'toDate(now())'`。
 
 **Item 14**：多列元组 IN `(ths_code, date) IN (...)`
 
@@ -430,6 +433,124 @@ SELECT * FROM cbond.cbond_daily_quote_market
 WHERE (((CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02')
   AND ths_code IN ('110001.SH', '110002.SH'))
   AND close > 0) AND volume > 0
+```
+
+---
+
+### M5 回归：字符串值引号处理
+
+**Item 16**：`=` 运算符，字符串 value 不手动加引号
+
+```json
+{"column": "issue_credit_rating", "op": "=", "value": "AAA"}
+```
+
+```sql
+SELECT * FROM cbond.cbond_basic_info
+WHERE issue_credit_rating = 'AAA'
+```
+
+**Item 17**：`>` 运算符，日期字符串 value 不手动加引号
+
+```json
+{"column": "maturity_date", "op": ">", "value": "2030-01-01"}
+```
+
+```sql
+SELECT * FROM cbond.cbond_basic_info
+WHERE maturity_date > '2030-01-01'
+```
+
+**Item 18**：`LIKE` 运算符，value 含单引号（自动转义）
+
+```json
+{"column": "issue_credit_rating", "op": "LIKE", "value": "AA'%"}
+```
+
+```sql
+SELECT * FROM cbond.cbond_basic_info
+WHERE issue_credit_rating LIKE 'AA''%'
+```
+
+> **注**：value 中的单引号自动转义为 `''`（SQL 标准），无需手动处理。
+
+**Item 19**：`IN` 运算符，列表元素含单引号（自动转义）
+
+```json
+{"column": "issue_credit_rating", "op": "IN", "value": ["AA+", "AA-", "AA'"]}
+```
+
+```sql
+SELECT * FROM cbond.cbond_basic_info
+WHERE issue_credit_rating IN ('AA+', 'AA-', 'AA''')
+```
+
+---
+
+### M6 回归：value 类型自动识别
+
+**Item 20**：value 为 SQL 函数表达式（不加引号）
+
+```json
+{
+  "filters": [
+    {"column": {"func": "toDate", "column": "time"}, "op": "=", "value": "toDate(now())"},
+    {"column": "close", "op": ">", "value": 0}
+  ]
+}
+```
+
+```sql
+SELECT * FROM cbond.cbond_hf_1min_market
+WHERE ((time > '2026-03-02 13:30:00' AND time <= '2026-03-02 15:30:00')
+  AND toDate(time) = toDate(now())) AND close > 0
+```
+
+**Item 21**：value 已手动加单引号（自动规范化，不双重加引号）
+
+```json
+{"column": "ths_code", "op": "=", "value": "'110001.SH'"}
+```
+
+```sql
+SELECT * FROM cbond.cbond_basic_info
+WHERE ths_code = '110001.SH'
+```
+
+**Item 22**：`IN` 列表元素已手动加单引号（自动规范化）
+
+```json
+{"column": "ths_code", "op": "IN", "value": ["'110001.SH'", "'110002.SH'"]}
+```
+
+```sql
+SELECT * FROM cbond.cbond_basic_info
+WHERE ths_code IN ('110001.SH', '110002.SH')
+```
+
+**Item 23**：`BETWEEN` 两端为日期字符串（自动加引号）
+
+```json
+{"column": "listed_date", "op": "BETWEEN", "value": ["2020-01-01", "2026-12-31"]}
+```
+
+```sql
+SELECT * FROM cbond.cbond_basic_info
+WHERE listed_date BETWEEN '2020-01-01' AND '2026-12-31'
+```
+
+> **注**：修复前日期字符串不加引号，生成 `BETWEEN 2020-01-01 AND 2026-12-31`，ClickHouse 会按算术运算解析。
+
+**Item 24**：`BETWEEN` 两端为数字（不受影响，验证数字不被错误加引号）
+
+```json
+{"column": "close", "op": "BETWEEN", "value": [50, 200]}
+```
+
+```sql
+SELECT * FROM cbond.stock_daily_quotes_non_ror
+WHERE (CAST(date AS DATE) > '2026-02-11' AND CAST(date AS DATE) <= '2026-03-02')
+  AND close BETWEEN 50 AND 200
 ```
 
 ---
