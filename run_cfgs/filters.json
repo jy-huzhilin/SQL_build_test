@@ -205,7 +205,7 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "list_date", "op": "BETWEEN", "value": ["2020-01-01", "2026-12-31"]}]
+      "filters": [{"column": "listed_date", "op": "BETWEEN", "value": ["2020-01-01", "2026-12-31"]}]
     },
     {
       "_comment": "M6回归：BETWEEN 两端为数字（不受影响，验证修复后数字不被错误加引号）",
