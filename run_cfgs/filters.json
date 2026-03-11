@@ -165,7 +165,7 @@
       "type": "data",
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
-      "filters": [{"column": "bond_full_name", "op": "LIKE", "value": "中国'%"}]
+      "filters": [{"column": "issue_credit_rating", "op": "LIKE", "value": "AA'%"}]
     },
     {
       "_comment": "M5回归：IN 运算符，list 中的值含单引号需转义（修复前生成 IN ('AA'+') 会报 SQL 错误）",
