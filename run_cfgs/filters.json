@@ -145,6 +145,34 @@
         {"column": "close", "op": ">", "value": 0},
         {"column": "volume", "op": ">", "value": 0}
       ]
+    },
+    {
+      "_comment": "M5回归：= 运算符，字符串 value 不手动加引号（修复前会生成 col = AAA，修复后生成 col = 'AAA'）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "issue_credit_rating", "op": "=", "value": "AAA"}]
+    },
+    {
+      "_comment": "M5回归：> 运算符，日期字符串 value（修复前生成 col > 2030-01-01，修复后生成 col > '2030-01-01'）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "maturity_date", "op": ">", "value": "2030-01-01"}]
+    },
+    {
+      "_comment": "M5回归：LIKE 运算符，value 含单引号需转义（修复前生成 LIKE 'O'Brien%' 会报 SQL 错误）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "bond_full_name", "op": "LIKE", "value": "中国'%"}]
+    },
+    {
+      "_comment": "M5回归：IN 运算符，list 中的值含单引号需转义（修复前生成 IN ('AA'+') 会报 SQL 错误）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "issue_credit_rating", "op": "IN", "value": ["AA+", "AA-", "AA'"]}]
     }
   ],
   "output": [],
