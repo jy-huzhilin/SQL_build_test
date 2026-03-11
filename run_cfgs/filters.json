@@ -173,6 +173,48 @@
       "db": "basic_data_db",
       "sources": ["cbond.cbond_basic_info"],
       "filters": [{"column": "issue_credit_rating", "op": "IN", "value": ["AA+", "AA-", "AA'"]}]
+    },
+    {
+      "_comment": "M6回归：= 运算符，value 为 SQL 函数表达式（修复前生成 col = 'toDate(now())'，修复后生成 col = toDate(now())）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_hf_1min_market"],
+      "start_time": "-7200",
+      "end_time": "schedule_now",
+      "filters": [
+        {"column": {"func": "toDate", "column": "time"}, "op": "=", "value": "toDate(now())"},
+        {"column": "close", "op": ">", "value": 0}
+      ]
+    },
+    {
+      "_comment": "M6回归：= 运算符，value 已手动加单引号（修复前双重加引号变成 ''000001.SH''，修复后规范化为 '000001.SH'）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "ths_code", "op": "=", "value": "'110001.SH'"}]
+    },
+    {
+      "_comment": "M6回归：IN 运算符，list 中的元素已手动加单引号（修复前双重加引号，修复后规范化）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "ths_code", "op": "IN", "value": ["'110001.SH'", "'110002.SH'"]}]
+    },
+    {
+      "_comment": "M6回归：BETWEEN 两端为日期字符串（修复前生成 BETWEEN 2020-01-01 AND 2026-12-31 被当算术，修复后加引号）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.cbond_basic_info"],
+      "filters": [{"column": "list_date", "op": "BETWEEN", "value": ["2020-01-01", "2026-12-31"]}]
+    },
+    {
+      "_comment": "M6回归：BETWEEN 两端为数字（不受影响，验证修复后数字不被错误加引号）",
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_daily_quotes_non_ror"],
+      "start_time": "-604800",
+      "end_time": "schedule_now",
+      "filters": [{"column": "close", "op": "BETWEEN", "value": [50, 200]}]
     }
   ],
   "output": [],
