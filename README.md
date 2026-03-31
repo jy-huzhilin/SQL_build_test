@@ -1450,10 +1450,52 @@ QUALIFY row_number() OVER (
   PARTITION BY toStartOfInterval(time, INTERVAL '5' MINUTE)
   ORDER BY time DESC
 ) = 1
+ORDER BY time DESC
+```
+
+**Item 3**：以 `start_time` 为锚点，每 5 分钟取第一条
+
+```json
+{
+  "sources": ["cbond.stock_hf_1min_ror"],
+  "start_time": "-3600",
+  "end_time": "schedule_now",
+  "sampling": {"interval": "5m", "anchor": "start_time"}
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_hf_1min_ror
+WHERE time > '2026-03-02 14:30:00' AND time <= '2026-03-02 15:30:00'
+QUALIFY row_number() OVER (
+  PARTITION BY intDiv(DATE_DIFF(SECOND, toDateTime('2026-03-02 14:30:00'), toDateTime(time)), 300)
+  ORDER BY time ASC
+) = 1
 ORDER BY time ASC
 ```
 
-**Item 3**：每 1 小时采样，2小时范围
+**Item 4**：以 `end_time` 为锚点，每 5 分钟取最后一条
+
+```json
+{
+  "sources": ["cbond.stock_hf_1min_ror"],
+  "start_time": "-3600",
+  "end_time": "schedule_now",
+  "sampling": {"interval": "-5m", "anchor": "end_time"}
+}
+```
+
+```sql
+SELECT * FROM cbond.stock_hf_1min_ror
+WHERE time > '2026-03-02 14:30:00' AND time <= '2026-03-02 15:30:00'
+QUALIFY row_number() OVER (
+  PARTITION BY intDiv(DATE_DIFF(SECOND, toDateTime(time), toDateTime('2026-03-02 15:30:00')), 300)
+  ORDER BY time DESC
+) = 1
+ORDER BY time DESC
+```
+
+**Item 5**：每 1 小时采样，2小时范围
 
 ```json
 {
@@ -1474,7 +1516,7 @@ QUALIFY row_number() OVER (
 ORDER BY time ASC
 ```
 
-**Item 4**：每 30 秒采样，30分钟范围
+**Item 6**：每 30 秒采样，30分钟范围
 
 ```json
 {
@@ -1494,6 +1536,7 @@ ORDER BY time ASC
 ```
 
 > 采样间隔支持：`s`（秒）、`m`（分钟）、`h`（小时）。
+> `anchor` 支持：`calendar`（默认）、`start_time`、`end_time`。
 
 ---
 

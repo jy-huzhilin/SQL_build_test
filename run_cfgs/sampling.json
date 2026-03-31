@@ -19,6 +19,22 @@
     {
       "type": "data",
       "db": "basic_data_db",
+      "sources": ["cbond.stock_hf_1min_ror"],
+      "start_time": "-3600",
+      "end_time": "schedule_now",
+      "sampling": {"interval": "5m", "anchor": "start_time"}
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
+      "sources": ["cbond.stock_hf_1min_ror"],
+      "start_time": "-3600",
+      "end_time": "schedule_now",
+      "sampling": {"interval": "-5m", "anchor": "end_time"}
+    },
+    {
+      "type": "data",
+      "db": "basic_data_db",
       "sources": ["cbond.cbond_hf_1min_market"],
       "start_time": "-7200",
       "end_time": "schedule_now",
